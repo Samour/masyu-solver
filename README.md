@@ -32,6 +32,12 @@ black --check solver
 black solver
 ```
 
+Type linting:
+
+```
+mypy --strict solver
+```
+
 ## Run app
 
 From root directory
