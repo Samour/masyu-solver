@@ -1,4 +1,4 @@
-import solver.view.application as application
+from solver.view import application
 
 
 if __name__ == "__main__":
