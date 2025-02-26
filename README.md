@@ -5,5 +5,5 @@
 From root directory
 
 ```
-python3 solver.main
+python3 -m solver.main
 ```
