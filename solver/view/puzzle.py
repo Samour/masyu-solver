@@ -16,6 +16,18 @@ class _Coords:
     class Dot:
         RADIUS = 1
 
+        @staticmethod
+        def get_rect(x: int, y: int) -> typing.Tuple[float, float, float, float]:
+            tile_x = (x + 0.5) * _Coords.TILE_SIZE
+            tile_y = (y + 0.5) * _Coords.TILE_SIZE
+
+            dot_x0 = tile_x - _Coords.Dot.RADIUS + _Coords.OFFSET
+            dot_x1 = tile_x + _Coords.Dot.RADIUS + _Coords.OFFSET
+            dot_y0 = tile_y - _Coords.Dot.RADIUS + _Coords.OFFSET
+            dot_y1 = tile_y + _Coords.Dot.RADIUS + _Coords.OFFSET
+
+            return dot_x0, dot_y0, dot_x1, dot_y1
+
     @staticmethod
     def map_to_tile(x: int, y: int) -> typing.Optional[typing.Tuple[int, int]]:
         tile_x = _Coords._map_tile_coord(x)
@@ -104,14 +116,7 @@ class _Tile:
         self._draw_dot(canvas)
 
     def _draw_dot(self, canvas: tk.Canvas) -> None:
-        tile_x = (self._x + 0.5) * _Coords.TILE_SIZE
-        tile_y = (self._y + 0.5) * _Coords.TILE_SIZE
-
-        dot_x0 = tile_x - _Coords.Dot.RADIUS + _Coords.OFFSET
-        dot_x1 = tile_x + _Coords.Dot.RADIUS + _Coords.OFFSET
-        dot_y0 = tile_y - _Coords.Dot.RADIUS + _Coords.OFFSET
-        dot_y1 = tile_y + _Coords.Dot.RADIUS + _Coords.OFFSET
-
+        dot_x0, dot_y0, dot_x1, dot_y1 = _Coords.Dot.get_rect(self._x, self._y)
         self._handle = canvas.create_oval(
             dot_x0, dot_y0, dot_x1, dot_y1, fill=_Colours.DOT, outline=_Colours.DOT
         )
