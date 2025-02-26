@@ -20,6 +20,18 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
+## Linting
+
+Style linting:
+
+```
+# Report on style violations without changing the files
+black --check solver
+
+# Auto-fix style violations
+black solver
+```
+
 ## Run app
 
 From root directory
