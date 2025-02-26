@@ -1,6 +1,5 @@
-def main():
-  print('Hello Python! It\'s been a while')
+import solver.view.application as application
 
 
 if __name__ == '__main__':
-  main()
+  application.main()
