@@ -6,6 +6,8 @@ import enum
 class _Colours:
     CANVAS_BG = "white"
     DOT = "black"
+    CIRCLE_OUTLINE = "black"
+    CIRCLE_INNER = "white"
 
 
 class _Coords:
@@ -18,15 +20,28 @@ class _Coords:
 
         @staticmethod
         def get_rect(x: int, y: int) -> typing.Tuple[float, float, float, float]:
-            tile_x = (x + 0.5) * _Coords.TILE_SIZE
-            tile_y = (y + 0.5) * _Coords.TILE_SIZE
+            return _Coords._get_rect_for_circle(x, y, _Coords.Dot.RADIUS)
 
-            dot_x0 = tile_x - _Coords.Dot.RADIUS + _Coords.OFFSET
-            dot_x1 = tile_x + _Coords.Dot.RADIUS + _Coords.OFFSET
-            dot_y0 = tile_y - _Coords.Dot.RADIUS + _Coords.OFFSET
-            dot_y1 = tile_y + _Coords.Dot.RADIUS + _Coords.OFFSET
+    class Circle:
+        RADIUS = 5
 
-            return dot_x0, dot_y0, dot_x1, dot_y1
+        @staticmethod
+        def get_rect(x: int, y: int) -> typing.Tuple[float, float, float, float]:
+            return _Coords._get_rect_for_circle(x, y, _Coords.Circle.RADIUS)
+
+    @staticmethod
+    def _get_rect_for_circle(
+        x: int, y: int, radius: int
+    ) -> typing.Tuple[float, float, float, float]:
+        tile_x = (x + 0.5) * _Coords.TILE_SIZE
+        tile_y = (y + 0.5) * _Coords.TILE_SIZE
+
+        circle_x0 = tile_x - radius + _Coords.OFFSET
+        circle_x1 = tile_x + radius + _Coords.OFFSET
+        circle_y0 = tile_y - radius + _Coords.OFFSET
+        circle_y1 = tile_y + radius + _Coords.OFFSET
+
+        return circle_x0, circle_y0, circle_x1, circle_y1
 
     @staticmethod
     def map_to_tile(x: int, y: int) -> typing.Optional[typing.Tuple[int, int]]:
@@ -85,6 +100,8 @@ class PuzzleView(tk.Frame):
 
         tile = self._tiles[coords[0]][coords[1]]
         tile.next_type()
+        assert self._canvas is not None
+        tile.draw(self._canvas)
 
     def _handle_rightclick(self, e: tk.Event) -> None:  # type: ignore[type-arg]
         coords = _Coords.map_to_tile(e.x, e.y)
@@ -93,6 +110,8 @@ class PuzzleView(tk.Frame):
 
         tile = self._tiles[coords[0]][coords[1]]
         tile.previous_type()
+        assert self._canvas is not None
+        tile.draw(self._canvas)
 
 
 class _TileType(enum.Enum):
@@ -113,7 +132,12 @@ class _Tile:
         if self._handle is not None:
             canvas.delete(self._handle)
 
-        self._draw_dot(canvas)
+        if self._type == _TileType.ANY:
+            self._draw_dot(canvas)
+        elif self._type == _TileType.CORNER:
+            self._draw_solid_circle(canvas)
+        elif self._type == _TileType.STRAIGHT:
+            self._draw_hollow_circle(canvas)
 
     def _draw_dot(self, canvas: tk.Canvas) -> None:
         dot_x0, dot_y0, dot_x1, dot_y1 = _Coords.Dot.get_rect(self._x, self._y)
@@ -121,8 +145,44 @@ class _Tile:
             dot_x0, dot_y0, dot_x1, dot_y1, fill=_Colours.DOT, outline=_Colours.DOT
         )
 
+    def _draw_solid_circle(self, canvas: tk.Canvas) -> None:
+        circle_x0, circle_y0, circle_x1, circle_y1 = _Coords.Circle.get_rect(
+            self._x, self._y
+        )
+        self._handle = canvas.create_oval(
+            circle_x0,
+            circle_y0,
+            circle_x1,
+            circle_y1,
+            fill=_Colours.CIRCLE_OUTLINE,
+            outline=_Colours.CIRCLE_OUTLINE,
+        )
+
+    def _draw_hollow_circle(self, canvas: tk.Canvas) -> None:
+        circle_x0, circle_y0, circle_x1, circle_y1 = _Coords.Circle.get_rect(
+            self._x, self._y
+        )
+        self._handle = canvas.create_oval(
+            circle_x0,
+            circle_y0,
+            circle_x1,
+            circle_y1,
+            fill=_Colours.CIRCLE_INNER,
+            outline=_Colours.CIRCLE_OUTLINE,
+        )
+
     def next_type(self) -> None:
-        print(f"Move ({self._x}, {self._y}) to next type")
+        if self._type == _TileType.ANY:
+            self._type = _TileType.CORNER
+        elif self._type == _TileType.CORNER:
+            self._type = _TileType.STRAIGHT
+        elif self._type == _TileType.STRAIGHT:
+            self._type = _TileType.ANY
 
     def previous_type(self) -> None:
-        print(f"Move ({self._x}, {self._y}) to previous type")
+        if self._type == _TileType.ANY:
+            self._type = _TileType.STRAIGHT
+        elif self._type == _TileType.STRAIGHT:
+            self._type = _TileType.CORNER
+        elif self._type == _TileType.CORNER:
+            self._type = _TileType.ANY
