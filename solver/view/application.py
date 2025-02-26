@@ -1,13 +1,14 @@
 import tkinter as tk
+import typing
 
 
 class Application(tk.Frame):
 
-  def __init__(self, master):
+  def __init__(self, master: tk.Tk):
     super().__init__(master)
-    self._is_closing = False
-    self._message = None
-    self._close_button = None
+    self._is_closing: bool = False
+    self._message: typing.Optional[tk.Label] = None
+    self._close_button: typing.Optional[tk.Button]  = None
 
   def render(self):
     if self._message is not None:
@@ -40,7 +41,7 @@ class Application(tk.Frame):
 def main():
   root = tk.Tk()
   app = Application(root)
-  app.master.title('Masyu Solver')
-  app.master.geometry('+500+200')
+  root.title('Masyu Solver')
+  root.geometry('+500+200')
   app.render()
   root.mainloop()
