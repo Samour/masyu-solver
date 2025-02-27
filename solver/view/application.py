@@ -35,50 +35,50 @@ class _SizeSelector(tk.Toplevel):
 
     def __init__(self, master: tk.Frame):
         super().__init__(master)
-        self._warning_text: typing.Optional[tk.Label] = None
-        self._height_row: typing.Optional[tk.LabelFrame] = None
-        self._width_row: typing.Optional[tk.LabelFrame] = None
-        self._controls_row: typing.Optional[tk.Frame] = None
+        self._frame: typing.Optional[tk.Frame] = None
 
     def render(self) -> None:
-        if self._warning_text is not None:
-            self._warning_text.destroy()
-        if self._height_row is not None:
-            self._height_row.destroy()
-        if self._width_row is not None:
-            self._width_row.destroy()
-        if self._controls_row is not None:
-            self._controls_row.destroy()
+        if self._frame is not None:
+            self._frame.destroy()
 
-        self._warning_text = tk.Label(
-            self,
-            text="Warning: Changing the board size will reset all elements of the board",
+        self._frame = tk.Frame(self)
+        warning_row = tk.Frame(self._frame)
+        warning_label = tk.Label(
+            warning_row,
+            text="Warning:",
             fg="red",
         )
-        self._warning_text.pack()
-
-        self._height_row = tk.LabelFrame(self)
-        height_label = tk.Label(self._height_row, text="Height:")
-        height_label.pack()
-        height_input = tk.Entry(self._height_row)
-        height_input.pack()
-        self._height_row.pack()
-
-        self._width_row = tk.LabelFrame(self)
-        width_label = tk.Label(self._width_row, text="Width:")
-        width_label.pack()
-        width_input = tk.Entry(self._width_row)
-        width_input.pack()
-        self._width_row.pack()
-
-        self._controls_row = tk.Frame(self)
-        cancel_button = tk.Button(
-            self._controls_row, text="Cancel", command=self.destroy
+        warning_label.pack(side="left")
+        warning_message = tk.Label(
+            warning_row,
+            text="Changing the board size will reset all elements of the board",
         )
-        cancel_button.pack()
-        confirm_button = tk.Button(self._controls_row, text="Confirm")
+        warning_message.pack()
+        warning_row.pack()
+
+        data_row = tk.Frame(self._frame)
+        labels_column = tk.Frame(data_row)
+        height_label = tk.Label(labels_column, text="Height:")
+        height_label.pack()
+        width_label = tk.Label(labels_column, text="Width:")
+        width_label.pack()
+        labels_column.pack(side="left")
+
+        inputs_column = tk.Frame(data_row)
+        height_input = tk.Entry(inputs_column, width=2)
+        height_input.pack()
+        width_input = tk.Entry(inputs_column, width=2)
+        width_input.pack()
+        inputs_column.pack(padx=5)
+        data_row.pack()
+
+        controls_row = tk.Frame(self._frame)
+        cancel_button = tk.Button(controls_row, text="Cancel", command=self.destroy)
+        cancel_button.pack(side="left")
+        confirm_button = tk.Button(controls_row, text="Confirm")
         confirm_button.pack()
-        self._controls_row.pack()
+        controls_row.pack()
+        self._frame.pack(padx=15, pady=15)
 
 
 def main() -> None:
