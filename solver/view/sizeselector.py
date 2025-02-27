@@ -1,3 +1,4 @@
+import re
 import tkinter as tk
 import typing
 
@@ -7,6 +8,8 @@ class SizeSelector(tk.Toplevel):
     def __init__(self, master: tk.Frame):
         super().__init__(master)
         self._frame: typing.Optional[tk.Frame] = None
+
+        self._validate_command = self.register(self._on_validate), "%P"
 
     def render(self) -> None:
         if self._frame is not None:
@@ -36,9 +39,16 @@ class SizeSelector(tk.Toplevel):
         labels_column.pack(side="left")
 
         inputs_column = tk.Frame(data_row)
-        height_input = tk.Entry(inputs_column, width=2)
+        height_input = tk.Entry(
+            inputs_column,
+            width=2,
+            validate="key",
+            validatecommand=self._validate_command,
+        )
         height_input.pack()
-        width_input = tk.Entry(inputs_column, width=2)
+        width_input = tk.Entry(
+            inputs_column, width=2, validatecommand=self._validate_command
+        )
         width_input.pack()
         inputs_column.pack(padx=5)
         data_row.pack()
@@ -50,3 +60,6 @@ class SizeSelector(tk.Toplevel):
         confirm_button.pack()
         controls_row.pack()
         self._frame.pack(padx=15, pady=15)
+
+    def _on_validate(self, v: str) -> bool:
+        return tk.TRUE if re.match(r"^\d{0,2}$", v) is not None else tk.FALSE
