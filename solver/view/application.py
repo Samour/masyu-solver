@@ -11,6 +11,7 @@ class Application(tk.Frame):
         self._state = view_state
         self._puzzle_view: typing.Optional[puzzle.PuzzleView] = None
         self._puzzle_controls: typing.Optional[controls.PuzzleControls] = None
+        self._solving_controls: typing.Optional[controls.SolvingControls] = None
         self._save_load_controls: typing.Optional[controls.SaveLoadControls] = None
 
     def render(self) -> None:
@@ -18,6 +19,8 @@ class Application(tk.Frame):
             self._puzzle_view.destroy()
         if self._puzzle_controls is not None:
             self._puzzle_controls.destroy()
+        if self._solving_controls is not None:
+            self._solving_controls.destroy()
         if self._save_load_controls is not None:
             self._save_load_controls.destroy()
 
@@ -28,6 +31,8 @@ class Application(tk.Frame):
 
         self._puzzle_controls = controls.PuzzleControls(self, view_state=self._state)
         self._puzzle_controls.render()
+        self._solving_controls = controls.SolvingControls(self, view_state=self._state)
+        self._solving_controls.render()
         self._save_load_controls = controls.SaveLoadControls(
             self, view_state=self._state
         )

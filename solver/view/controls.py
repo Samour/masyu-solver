@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import typing
-from solver import serialization
+from solver import algorithm, serialization
 from . import sizeselector, state
 
 
@@ -105,6 +105,30 @@ class _SolveModeButtons(tk.Frame):
     def _on_change_mode(self) -> None:
         self._state.view_mode = state.ViewMode.EDITING
         self._rerender_controls()
+
+
+class SolvingControls(tk.Frame):
+
+    def __init__(self, master: tk.Frame, view_state: state.ViewState):
+        super().__init__(master)
+        self._state = view_state
+        self._check_button: typing.Optional[tk.Button] = None
+
+    def render(self) -> None:
+        if self._check_button is not None:
+            self._check_button.destroy()
+
+        self._check_button = tk.Button(
+            self, text="Check solution", command=self._check_solution
+        )
+        self._check_button.pack()
+        self.pack()
+
+    def _check_solution(self) -> None:
+        if algorithm.SolutionValidator(self._state.puzzle_state).is_solved():
+            messagebox.showinfo(message="Solution is correct!")
+        else:
+            messagebox.showinfo(message="Puzzle is not solved")
 
 
 class SaveLoadControls(tk.Frame):
