@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import typing
 from solver import model, serialization
 from . import sizeselector
@@ -74,9 +74,13 @@ class SaveLoadControls(tk.Frame):
         with fh:
             new_state = serialization.PuzzleDeserializer(fh).deserialize()
         if new_state is None:
+            self._show_load_warning()
             return
         self._puzzle_state.apply(new_state)
         self._on_puzzle_load()
+
+    def _show_load_warning(self) -> None:
+        messagebox.showwarning(title="Load error", message="Invalid puzzle file")
 
     def _on_save_click(self) -> None:
         fh = filedialog.asksaveasfile()
