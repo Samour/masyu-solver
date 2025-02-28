@@ -33,7 +33,9 @@ class Application(tk.Frame):
         )
         self._change_size_button.render()
         self._save_load_controls = _SaveLoadControls(
-            self, puzzle_state=self._puzzle_state
+            self,
+            puzzle_state=self._puzzle_state,
+            on_puzzle_load=self._puzzle_view.render,
         )
         self._save_load_controls.render()
 
@@ -71,9 +73,15 @@ class _ChangeSizeButton(tk.Frame):
 
 class _SaveLoadControls(tk.Frame):
 
-    def __init__(self, master: tk.Frame, puzzle_state: model.PuzzleState):
+    def __init__(
+        self,
+        master: tk.Frame,
+        puzzle_state: model.PuzzleState,
+        on_puzzle_load: typing.Callable[[], None],
+    ):
         super().__init__(master)
         self._puzzle_state = puzzle_state
+        self._on_puzzle_load = on_puzzle_load
         self._load_button: typing.Optional[tk.Button] = None
         self._save_button: typing.Optional[tk.Button] = None
 
@@ -83,13 +91,27 @@ class _SaveLoadControls(tk.Frame):
         if self._save_button is not None:
             self._save_button.destroy()
 
-        self._load_button = tk.Button(self, text="Load puzzle")
+        self._load_button = tk.Button(
+            self, text="Load puzzle", command=self._on_load_click
+        )
         self._load_button.pack(side="left", padx=5)
         self._save_button = tk.Button(
             self, text="Save puzzle", command=self._on_save_click
         )
         self._save_button.pack(padx=5)
         self.pack(pady=5)
+
+    def _on_load_click(self) -> None:
+        fh = filedialog.askopenfile()
+        if fh is None:
+            return
+
+        with fh:
+            new_state = serialization.PuzzleDeserializer(fh).deserialize()
+        if new_state is None:
+            return
+        self._puzzle_state.apply(new_state)
+        self._on_puzzle_load()
 
     def _on_save_click(self) -> None:
         fh = filedialog.asksaveasfile()

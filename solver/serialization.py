@@ -1,3 +1,4 @@
+import re
 import typing
 from . import model
 
@@ -60,3 +61,108 @@ class PuzzleSerializer:
             return _Symbols.TileType.CORDER
         elif tile == model.TileType.STRAIGHT:
             return _Symbols.TileType.STRAIGHT
+
+
+class PuzzleDeserializer:
+
+    _VERSION = 1
+
+    def __init__(self, reader: typing.IO[typing.Any]):
+        assert reader.readable()
+        self._rh = reader
+
+    def deserialize(self) -> typing.Optional[model.PuzzleState]:
+        if not self._read_validate_version():
+            return None
+
+        dimensions = self._read_dimensions()
+        if dimensions is None:
+            return None
+
+        width, height = dimensions
+        puzzle_state = model.PuzzleState(width=width, height=height)
+
+        return puzzle_state if self._read_vertices(puzzle_state) else None
+
+    def _read_section(self) -> typing.Optional[str]:
+        section: list[str] = []
+        c = self._rh.read(1)
+        if not len(c):
+            return None
+
+        while len(c) and c != _Symbols.DELIM:
+            section.append(c)
+            c = self._rh.read(1)
+
+        return "".join(section)
+
+    def _read_validate_version(self) -> bool:
+        version_section = self._read_section()
+        if version_section is None:
+            print("ERROR: File is empty")
+            return False
+
+        version = self._parse_version(version_section)
+        if version is None:
+            print("ERROR: Could not parse version")
+            return False
+        elif version != self._VERSION:
+            print(f"ERROR: Invalid version {version}")
+            return False
+
+        return True
+
+    def _parse_version(self, data: str) -> typing.Optional[int]:
+        match = re.match(f"^{_Symbols.VERSION_PREFIX}(\\d)+$", data)
+        return int(match.group(1)) if match is not None else None
+
+    def _read_dimensions(self) -> typing.Optional[typing.Tuple[int, int]]:
+        dimensions_section = self._read_section()
+        if dimensions_section is None:
+            print("ERROR: Unexpected end of file while trying to read dimensions")
+            return None
+
+        dimensions = re.match(
+            f"^{_Symbols.DIMENSIONS_PREFIX}(\\d+){_Symbols.DIMENSIONS_DELIM}(\\d+)$",
+            dimensions_section,
+        )
+        if dimensions is None:
+            print("ERROR: Could not parse dimensions")
+            return None
+
+        return int(dimensions.group(1)), int(dimensions.group(2))
+
+    def _read_vertices(self, puzzle_state: model.PuzzleState) -> bool:
+        vertices_section = self._read_section()
+        if vertices_section is None:
+            print("ERROR: Unexpected end of file while trying to read vertices")
+            return False
+
+        x = 0
+        y = 0
+        for c in vertices_section:
+            tile_type = self._map_tile_type(c)
+            if tile_type is None:
+                print(f"ERROR: Unexpected vertex type at ({x}, {y})")
+                return False
+            try:
+                puzzle_state.set_tile(x, y, tile_type)
+            except:
+                print(f"ERROR: Invalid coordinates ({x}, {y})")
+                return False
+            x += 1
+            if x >= puzzle_state.width:
+                x = 0
+                y += 1
+
+        return True
+
+    def _map_tile_type(self, data: str) -> typing.Optional[model.TileType]:
+        if data == _Symbols.TileType.ANY:
+            return model.TileType.ANY
+        elif data == _Symbols.TileType.CORDER:
+            return model.TileType.CORNER
+        elif data == _Symbols.TileType.STRAIGHT:
+            return model.TileType.STRAIGHT
+        else:
+            return None

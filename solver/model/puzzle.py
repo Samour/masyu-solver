@@ -30,6 +30,14 @@ class PuzzleState:
         self._height = height
         self._tiles = [[TileType.ANY for _y in range(height)] for _x in range(width)]
 
+    def apply(self, state: typing.Self) -> None:
+        self.reset(state.width, state.height)
+        for y in range(state.height):
+            for x in range(state.width):
+                tile = state.get_tile(x, y)
+                assert tile is not None
+                self.set_tile(x, y, tile)
+
     def get_tile(self, x: int, y: int) -> typing.Optional[TileType]:
         if x < 0 or x >= self.width or y < 0 or y >= self.height:
             return None
