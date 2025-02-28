@@ -51,12 +51,13 @@ class PuzzleState:
                 tile = state.get_tile(x, y)
                 assert tile is not None
                 self.set_tile(x, y, tile)
-        for y in range(state.height - 1):
+        for y in range(state.height):
             for x in range(state.width - 1):
                 hline = state.get_hline(x, y)
                 assert hline is not None
                 self.set_hline(x, y, hline)
-
+        for y in range(state.height - 1):
+            for x in range(state.width):
                 vline = state.get_vline(x, y)
                 assert vline is not None
                 self.set_vline(x, y, vline)
