@@ -19,16 +19,31 @@ class PuzzleControls(tk.Frame):
         if self._solve_mode_buttons is not None:
             self._solve_mode_buttons.destroy()
 
-        self._edit_mode_buttons = _EditModeButtons(self, view_state=self._state)
-        self._edit_mode_buttons.render()
+        if self._state.view_mode == state.ViewMode.EDITING:
+            self._edit_mode_buttons = _EditModeButtons(
+                self, view_state=self._state, render_controls=self.render
+            )
+            self._edit_mode_buttons.render()
+        elif self._state.view_mode == state.ViewMode.SOLVING:
+            self._solve_mode_buttons = _SolveModeButtons(
+                self, view_state=self._state, render_controls=self.render
+            )
+            self._solve_mode_buttons.render()
+
         self.pack()
 
 
 class _EditModeButtons(tk.Frame):
 
-    def __init__(self, master: tk.Frame, view_state: state.ViewState):
+    def __init__(
+        self,
+        master: tk.Frame,
+        view_state: state.ViewState,
+        render_controls: typing.Callable[[], None],
+    ):
         super().__init__(master)
         self._state = view_state
+        self._rerender_controls = render_controls
         self._size_button: typing.Optional[tk.Button] = None
         self._change_mode_button: typing.Optional[tk.Button] = None
 
@@ -42,7 +57,9 @@ class _EditModeButtons(tk.Frame):
             self, text="Change size", command=self._on_changesize
         )
         self._size_button.pack(side="left", padx=5)
-        self._change_mode_button = tk.Button(self, text="Start solving")
+        self._change_mode_button = tk.Button(
+            self, text="Start solving", command=self._on_change_mode
+        )
         self._change_mode_button.pack(padx=5)
         self.pack(pady=5)
 
@@ -57,14 +74,37 @@ class _EditModeButtons(tk.Frame):
         self._state.puzzle_state.reset(width, height)
         self._state.rerender_puzzle()
 
+    def _on_change_mode(self) -> None:
+        self._state.view_mode = state.ViewMode.SOLVING
+        self._rerender_controls()
+
 
 class _SolveModeButtons(tk.Frame):
 
-    def __init__(self, master: tk.Frame):
+    def __init__(
+        self,
+        master: tk.Frame,
+        view_state: state.ViewState,
+        render_controls: typing.Callable[[], None],
+    ):
         super().__init__(master)
+        self._state = view_state
+        self._rerender_controls = render_controls
+        self._change_mode_button: typing.Optional[tk.Button] = None
 
     def render(self) -> None:
-        pass
+        if self._change_mode_button is not None:
+            self._change_mode_button.destroy()
+
+        self._change_mode_button = tk.Button(
+            self, text="Edit board", command=self._on_change_mode
+        )
+        self._change_mode_button.pack()
+        self.pack(pady=5)
+
+    def _on_change_mode(self) -> None:
+        self._state.view_mode = state.ViewMode.EDITING
+        self._rerender_controls()
 
 
 class SaveLoadControls(tk.Frame):

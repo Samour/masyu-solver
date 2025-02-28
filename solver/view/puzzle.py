@@ -98,7 +98,11 @@ class PuzzleView(tk.Frame):
                 tile.draw(self._canvas)
 
     def _handle_leftclick(self, e: tk.Event) -> None:  # type: ignore[type-arg]
-        coords = _Coords.map_to_tile(e.x, e.y)
+        if self._state.view_mode == state.ViewMode.EDITING:
+            self._handle_edit_leftclick(e.x, e.y)
+
+    def _handle_edit_leftclick(self, x: int, y: int) -> None:
+        coords = _Coords.map_to_tile(x, y)
         if coords is None:
             return
 
@@ -108,7 +112,11 @@ class PuzzleView(tk.Frame):
         tile.draw(self._canvas)
 
     def _handle_rightclick(self, e: tk.Event) -> None:  # type: ignore[type-arg]
-        coords = _Coords.map_to_tile(e.x, e.y)
+        if self._state.view_mode == state.ViewMode.EDITING:
+            self._handle_edit_rightclick(e.x, e.y)
+
+    def _handle_edit_rightclick(self, x: int, y: int) -> None:
+        coords = _Coords.map_to_tile(x, y)
         if coords is None:
             return
 
