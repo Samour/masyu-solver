@@ -35,21 +35,13 @@ class SizeSelector(tk.Toplevel):
 
         data_row = tk.Frame(self._frame)
         labels_column = tk.Frame(data_row)
-        height_label = tk.Label(labels_column, text="Height:")
-        height_label.pack()
         width_label = tk.Label(labels_column, text="Width:")
         width_label.pack()
+        height_label = tk.Label(labels_column, text="Height:")
+        height_label.pack()
         labels_column.pack(side="left")
 
         inputs_column = tk.Frame(data_row)
-        height_input = tk.Entry(
-            inputs_column,
-            width=2,
-            validate="key",
-            validatecommand=(self._validate_command, "h", "%P"),
-        )
-        height_input.bind()
-        height_input.pack()
         width_input = tk.Entry(
             inputs_column,
             width=2,
@@ -57,6 +49,13 @@ class SizeSelector(tk.Toplevel):
             validatecommand=(self._validate_command, "w", "%P"),
         )
         width_input.pack()
+        height_input = tk.Entry(
+            inputs_column,
+            width=2,
+            validate="key",
+            validatecommand=(self._validate_command, "h", "%P"),
+        )
+        height_input.pack()
         inputs_column.pack(padx=5)
         data_row.pack()
 
