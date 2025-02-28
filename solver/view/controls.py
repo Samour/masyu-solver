@@ -1,21 +1,15 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import typing
-from solver import model, serialization
-from . import sizeselector
+from solver import serialization
+from . import sizeselector, state
 
 
 class PuzzleControls(tk.Frame):
 
-    def __init__(
-        self,
-        master: tk.Frame,
-        puzzle_state: model.PuzzleState,
-        rerender_puzzle: typing.Callable[[], None],
-    ):
+    def __init__(self, master: tk.Frame, view_state: state.ViewState):
         super().__init__(master)
-        self._puzzle_state = puzzle_state
-        self._rerender_puzzle = rerender_puzzle
+        self._state = view_state
         self._edit_mode_buttons: typing.Optional[_EditModeButtons] = None
         self._solve_mode_buttons: typing.Optional[_SolveModeButtons] = None
 
@@ -25,24 +19,16 @@ class PuzzleControls(tk.Frame):
         if self._solve_mode_buttons is not None:
             self._solve_mode_buttons.destroy()
 
-        self._edit_mode_buttons = _EditModeButtons(
-            self, puzzle_state=self._puzzle_state, rerender_puzzle=self._rerender_puzzle
-        )
+        self._edit_mode_buttons = _EditModeButtons(self, view_state=self._state)
         self._edit_mode_buttons.render()
         self.pack()
 
 
 class _EditModeButtons(tk.Frame):
 
-    def __init__(
-        self,
-        master: tk.Frame,
-        puzzle_state: model.PuzzleState,
-        rerender_puzzle: typing.Callable[[], None],
-    ):
+    def __init__(self, master: tk.Frame, view_state: state.ViewState):
         super().__init__(master)
-        self._puzzle_state = puzzle_state
-        self._rerender_puzzle = rerender_puzzle
+        self._state = view_state
         self._size_button: typing.Optional[tk.Button] = None
         self._change_mode_button: typing.Optional[tk.Button] = None
 
@@ -68,8 +54,8 @@ class _EditModeButtons(tk.Frame):
         size_selector.grab_set()
 
     def _on_changesize_confirm(self, width: int, height: int) -> None:
-        self._puzzle_state.reset(width, height)
-        self._rerender_puzzle()
+        self._state.puzzle_state.reset(width, height)
+        self._state.rerender_puzzle()
 
 
 class _SolveModeButtons(tk.Frame):
@@ -86,12 +72,10 @@ class SaveLoadControls(tk.Frame):
     def __init__(
         self,
         master: tk.Frame,
-        puzzle_state: model.PuzzleState,
-        on_puzzle_load: typing.Callable[[], None],
+        view_state: state.ViewState,
     ):
         super().__init__(master)
-        self._puzzle_state = puzzle_state
-        self._on_puzzle_load = on_puzzle_load
+        self._state = view_state
         self._load_button: typing.Optional[tk.Button] = None
         self._save_button: typing.Optional[tk.Button] = None
 
@@ -121,8 +105,8 @@ class SaveLoadControls(tk.Frame):
         if new_state is None:
             self._show_load_warning()
             return
-        self._puzzle_state.apply(new_state)
-        self._on_puzzle_load()
+        self._state.puzzle_state.apply(new_state)
+        self._state.rerender_puzzle()
 
     def _show_load_warning(self) -> None:
         messagebox.showwarning(title="Load error", message="Invalid puzzle file")
@@ -133,4 +117,4 @@ class SaveLoadControls(tk.Frame):
             return
 
         with fh:
-            serialization.PuzzleSerializer(fh).serialize(self._puzzle_state)
+            serialization.PuzzleSerializer(fh).serialize(self._state.puzzle_state)

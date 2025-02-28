@@ -1,6 +1,7 @@
 import tkinter as tk
 import typing
 from solver import model
+from . import state
 
 
 class _Colours:
@@ -59,12 +60,12 @@ class _Coords:
 
 class PuzzleView(tk.Frame):
 
-    def __init__(self, master: tk.Frame, puzzle_state: model.PuzzleState):
+    def __init__(self, master: tk.Frame, view_state: state.ViewState):
         super().__init__(master)
         self._canvas: typing.Optional[tk.Canvas] = None
         self._tiles: list[list[_Tile]] = []
 
-        self._puzzle_state = puzzle_state
+        self._state = view_state
 
     def render(self) -> None:
         if self._canvas is not None:
@@ -72,8 +73,8 @@ class PuzzleView(tk.Frame):
 
         self._canvas = tk.Canvas(
             master=self,
-            width=self._puzzle_state.width * _Coords.TILE_SIZE,
-            height=self._puzzle_state.height * _Coords.TILE_SIZE,
+            width=self._state.puzzle_state.width * _Coords.TILE_SIZE,
+            height=self._state.puzzle_state.height * _Coords.TILE_SIZE,
             bg=_Colours.CANVAS_BG,
         )
         self._canvas.pack()
@@ -86,8 +87,11 @@ class PuzzleView(tk.Frame):
         self._canvas.bind("<Button-3>", self._handle_rightclick)
 
         self._tiles = [
-            [_Tile(self._puzzle_state, x, y) for y in range(self._puzzle_state.height)]
-            for x in range(self._puzzle_state.width)
+            [
+                _Tile(self._state.puzzle_state, x, y)
+                for y in range(self._state.puzzle_state.height)
+            ]
+            for x in range(self._state.puzzle_state.width)
         ]
         for column in self._tiles:
             for tile in column:
