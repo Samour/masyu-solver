@@ -1,6 +1,6 @@
 import tkinter as tk
 import typing
-import enum
+from solver import model
 
 
 class _Colours:
@@ -59,22 +59,21 @@ class _Coords:
 
 class PuzzleView(tk.Frame):
 
-    def __init__(self, master: tk.Frame):
+    def __init__(self, master: tk.Frame, puzzle_state: model.PuzzleState):
         super().__init__(master)
         self._canvas: typing.Optional[tk.Canvas] = None
         self._tiles: list[list[_Tile]] = []
+
+        self._puzzle_state = puzzle_state
 
     def render(self) -> None:
         if self._canvas is not None:
             self._canvas.destroy()
 
-        puzzle_width = 5
-        puzzle_height = 5
-
         self._canvas = tk.Canvas(
             master=self,
-            width=puzzle_width * _Coords.TILE_SIZE,
-            height=puzzle_height * _Coords.TILE_SIZE,
+            width=self._puzzle_state.width * _Coords.TILE_SIZE,
+            height=self._puzzle_state.height * _Coords.TILE_SIZE,
             bg=_Colours.CANVAS_BG,
         )
         self._canvas.pack()
@@ -87,7 +86,8 @@ class PuzzleView(tk.Frame):
         self._canvas.bind("<Button-3>", self._handle_rightclick)
 
         self._tiles = [
-            [_Tile(x, y) for y in range(puzzle_height)] for x in range(puzzle_width)
+            [_Tile(self._puzzle_state, x, y) for y in range(self._puzzle_state.height)]
+            for x in range(self._puzzle_state.width)
         ]
         for column in self._tiles:
             for tile in column:
@@ -114,29 +114,32 @@ class PuzzleView(tk.Frame):
         tile.draw(self._canvas)
 
 
-class _TileType(enum.Enum):
-    ANY = 1
-    CORNER = 2
-    STRAIGHT = 3
-
-
 class _Tile:
 
-    def __init__(self, x: int, y: int):
+    def __init__(self, puzzle_state: model.PuzzleState, x: int, y: int):
+        self._puzzle_state = puzzle_state
         self._x = x
         self._y = y
-        self._type: _TileType = _TileType.ANY
         self._handle: typing.Optional[int] = None
+
+    @property
+    def _type(self) -> model.TileType:
+        tile_type = self._puzzle_state.get_tile(self._x, self._y)
+        assert tile_type is not None
+        return tile_type
+
+    def _set_tile(self, tile: model.TileType) -> None:
+        self._puzzle_state.set_tile(self._x, self._y, tile)
 
     def draw(self, canvas: tk.Canvas) -> None:
         if self._handle is not None:
             canvas.delete(self._handle)
 
-        if self._type == _TileType.ANY:
+        if self._type == model.TileType.ANY:
             self._draw_dot(canvas)
-        elif self._type == _TileType.CORNER:
+        elif self._type == model.TileType.CORNER:
             self._draw_solid_circle(canvas)
-        elif self._type == _TileType.STRAIGHT:
+        elif self._type == model.TileType.STRAIGHT:
             self._draw_hollow_circle(canvas)
 
     def _draw_dot(self, canvas: tk.Canvas) -> None:
@@ -172,17 +175,17 @@ class _Tile:
         )
 
     def next_type(self) -> None:
-        if self._type == _TileType.ANY:
-            self._type = _TileType.CORNER
-        elif self._type == _TileType.CORNER:
-            self._type = _TileType.STRAIGHT
-        elif self._type == _TileType.STRAIGHT:
-            self._type = _TileType.ANY
+        if self._type == model.TileType.ANY:
+            self._set_tile(model.TileType.CORNER)
+        elif self._type == model.TileType.CORNER:
+            self._set_tile(model.TileType.STRAIGHT)
+        elif self._type == model.TileType.STRAIGHT:
+            self._set_tile(model.TileType.ANY)
 
     def previous_type(self) -> None:
-        if self._type == _TileType.ANY:
-            self._type = _TileType.STRAIGHT
-        elif self._type == _TileType.STRAIGHT:
-            self._type = _TileType.CORNER
-        elif self._type == _TileType.CORNER:
-            self._type = _TileType.ANY
+        if self._type == model.TileType.ANY:
+            self._set_tile(model.TileType.STRAIGHT)
+        elif self._type == model.TileType.STRAIGHT:
+            self._set_tile(model.TileType.CORNER)
+        elif self._type == model.TileType.CORNER:
+            self._set_tile(model.TileType.ANY)
