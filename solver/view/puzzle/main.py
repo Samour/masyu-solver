@@ -2,7 +2,7 @@ import tkinter as tk
 import typing
 from solver import model
 from solver.view import state
-from . import rendering, tile
+from . import cross, rendering, tile
 
 
 class PuzzleView(tk.Frame):
@@ -11,6 +11,8 @@ class PuzzleView(tk.Frame):
         super().__init__(master)
         self._canvas: typing.Optional[tk.Canvas] = None
         self._tiles: list[list[tile.Tile]] = []
+        self._hcrosses: list[list[cross.Cross]] = []
+        self._vcrosses: list[list[cross.Cross]] = []
 
         self._state = view_state
 
@@ -35,14 +37,45 @@ class PuzzleView(tk.Frame):
 
         self._tiles = [
             [
-                tile.Tile(self._state.puzzle_state, x, y)
+                tile.Tile(puzzle_state=self._state.puzzle_state, x=x, y=y)
                 for y in range(self._state.puzzle_state.height)
             ]
             for x in range(self._state.puzzle_state.width)
         ]
-        for column in self._tiles:
-            for t in column:
+        self._hcrosses = [
+            [
+                cross.Cross(
+                    puzzle_state=self._state.puzzle_state,
+                    x=x,
+                    y=y,
+                    orientation=rendering.LineType.HORIZONTAL,
+                )
+                for y in range(self._state.puzzle_state.height)
+            ]
+            for x in range(self._state.puzzle_state.width - 1)
+        ]
+        self._vcrosses = [
+            [
+                cross.Cross(
+                    puzzle_state=self._state.puzzle_state,
+                    x=x,
+                    y=y,
+                    orientation=rendering.LineType.VERTICAL,
+                )
+                for y in range(self._state.puzzle_state.height - 1)
+            ]
+            for x in range(self._state.puzzle_state.width)
+        ]
+
+        for tiles in self._tiles:
+            for t in tiles:
                 t.draw(self._canvas)
+        for crosses in self._hcrosses:
+            for c in crosses:
+                c.draw(self._canvas)
+        for crosses in self._vcrosses:
+            for c in crosses:
+                c.draw(self._canvas)
 
     def _handle_leftclick(self, e: tk.Event) -> None:  # type: ignore[type-arg]
         if self._state.view_mode == state.ViewMode.EDITING:
@@ -136,6 +169,7 @@ class PuzzleView(tk.Frame):
         assert self._canvas is not None
         self._tiles[x][y].draw(self._canvas)
         self._tiles[x + 1][y].draw(self._canvas)
+        self._hcrosses[x][y].draw(self._canvas)
 
     def _update_vline(self, x: int, y: int, forward: bool) -> None:
         old_state = self._state.puzzle_state.get_vline(x, y)
@@ -151,6 +185,7 @@ class PuzzleView(tk.Frame):
         assert self._canvas is not None
         self._tiles[x][y].draw(self._canvas)
         self._tiles[x][y + 1].draw(self._canvas)
+        self._vcrosses[x][y].draw(self._canvas)
 
     def _next_line_state(self, line: model.LineState) -> model.LineState:
         if line == model.LineState.ANY:

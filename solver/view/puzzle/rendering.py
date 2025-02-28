@@ -13,6 +13,7 @@ class Colours:
     CIRCLE_OUTLINE = "black"
     CIRCLE_INNER = "white"
     LINE = "black"
+    CROSS = "red"
 
 
 class Coords:
@@ -20,6 +21,7 @@ class Coords:
     TILE_SIZE = 30
     CLICK_PROXIMITY = 10
     LINE_WIDTH = 1
+    CROSS_RADIUS = 3
 
     class Dot:
         RADIUS = 1
