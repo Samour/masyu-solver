@@ -1,3 +1,4 @@
+import enum
 import tkinter as tk
 import typing
 from solver import model
@@ -9,6 +10,11 @@ class _Colours:
     DOT = "black"
     CIRCLE_OUTLINE = "black"
     CIRCLE_INNER = "white"
+
+
+class _LineType(enum.Enum):
+    VERTICAL = 1
+    HORIZONTAL = 2
 
 
 class _Coords:
@@ -57,6 +63,41 @@ class _Coords:
         delta = abs(v - _Coords.OFFSET - tile_center)
         return tile_v if delta < _Coords.CLICK_PROXIMITY else None
 
+    @staticmethod
+    def map_to_line(
+        x: int, y: int
+    ) -> typing.Optional[typing.Tuple[_LineType, int, int]]:
+        hline = _Coords._map_to_hline(x, y)
+        if hline is not None:
+            return _LineType.HORIZONTAL, hline[0], hline[1]
+
+        vline = _Coords._map_to_vline(x, y)
+        if vline is not None:
+            return _LineType.VERTICAL, vline[0], vline[1]
+
+        return None
+
+    @staticmethod
+    def _map_to_hline(x: int, y: int) -> typing.Optional[typing.Tuple[int, int]]:
+        line_x = _Coords._map_line_coord(x, True)
+        line_y = _Coords._map_line_coord(y, False)
+        return (line_x, line_y) if line_x is not None and line_y is not None else None
+
+    @staticmethod
+    def _map_to_vline(x: int, y: int) -> typing.Optional[typing.Tuple[int, int]]:
+        line_x = _Coords._map_line_coord(x, False)
+        line_y = _Coords._map_line_coord(y, True)
+        return (line_x, line_y) if line_x is not None and line_y is not None else None
+
+    @staticmethod
+    def _map_line_coord(v: int, center: bool) -> typing.Optional[int]:
+        line_offset = (_Coords.TILE_SIZE // 2 if center else 0) + _Coords.OFFSET
+        line_v = (v - line_offset) // _Coords.TILE_SIZE
+        center_offset = 1.0 if center else 0.5
+        line_center = (line_v + center_offset) * _Coords.TILE_SIZE
+        delta = abs(v - _Coords.OFFSET - line_center)
+        return line_v if delta < _Coords.CLICK_PROXIMITY else None
+
 
 class PuzzleView(tk.Frame):
 
@@ -100,6 +141,8 @@ class PuzzleView(tk.Frame):
     def _handle_leftclick(self, e: tk.Event) -> None:  # type: ignore[type-arg]
         if self._state.view_mode == state.ViewMode.EDITING:
             self._handle_edit_leftclick(e.x, e.y)
+        elif self._state.view_mode == state.ViewMode.SOLVING:
+            self._handle_solve_leftclick(e.x, e.y)
 
     def _handle_edit_leftclick(self, x: int, y: int) -> None:
         coords = _Coords.map_to_tile(x, y)
@@ -111,9 +154,19 @@ class PuzzleView(tk.Frame):
         assert self._canvas is not None
         tile.draw(self._canvas)
 
+    def _handle_solve_leftclick(self, c_x: int, c_y: int) -> None:
+        line = self._map_to_line(c_x, c_y)
+        if line is None:
+            return
+        d, x, y = line
+
+        print(f"handle_solve_leftclick: ({d}, {x}, {y})")
+
     def _handle_rightclick(self, e: tk.Event) -> None:  # type: ignore[type-arg]
         if self._state.view_mode == state.ViewMode.EDITING:
             self._handle_edit_rightclick(e.x, e.y)
+        elif self._state.view_mode == state.ViewMode.SOLVING:
+            self._handle_solve_rightclick(e.x, e.y)
 
     def _handle_edit_rightclick(self, x: int, y: int) -> None:
         coords = _Coords.map_to_tile(x, y)
@@ -124,6 +177,38 @@ class PuzzleView(tk.Frame):
         tile.previous_type()
         assert self._canvas is not None
         tile.draw(self._canvas)
+
+    def _handle_solve_rightclick(self, c_x: int, c_y: int) -> None:
+        line = self._map_to_line(c_x, c_y)
+        if line is None:
+            return
+        d, x, y = line
+
+        print(f"handle_solve_rightclick: ({d}, {x}, {y})")
+
+    def _map_to_line(
+        self, c_x: int, c_y: int
+    ) -> typing.Optional[typing.Tuple[_LineType, int, int]]:
+        line = _Coords.map_to_line(c_x, c_y)
+        if line is None:
+            return None
+        d, x, y = line
+        if x < 0 or y < 0:
+            return None
+        if d == _LineType.HORIZONTAL:
+            if (
+                x >= self._state.puzzle_state.width - 1
+                or y >= self._state.puzzle_state.height
+            ):
+                return None
+        elif d == _LineType.VERTICAL:
+            if (
+                x >= self._state.puzzle_state.width
+                or y >= self._state.puzzle_state.height - 1
+            ):
+                return None
+
+        return line
 
 
 class _Tile:
