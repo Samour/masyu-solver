@@ -11,10 +11,10 @@ class TileType(enum.Enum):
 class PuzzleState:
 
     def __init__(self, width: int, height: int):
-        assert width > 0 and height > 0
-        self._width = width
-        self._height = height
-        self._tiles = [[TileType.ANY for _y in range(height)] for _x in range(width)]
+        self._width: int = 0
+        self._height: int = 0
+        self._tiles: list[list[TileType]] = []
+        self.reset(width, height)
 
     @property
     def width(self) -> int:
@@ -23,6 +23,12 @@ class PuzzleState:
     @property
     def height(self) -> int:
         return self._height
+
+    def reset(self, width: int, height: int) -> None:
+        assert width > 0 and height > 0
+        self._width = width
+        self._height = height
+        self._tiles = [[TileType.ANY for _y in range(height)] for _x in range(width)]
 
     def get_tile(self, x: int, y: int) -> typing.Optional[TileType]:
         if x < 0 or x >= self.width or y < 0 or y >= self.height:

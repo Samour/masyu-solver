@@ -5,8 +5,9 @@ import typing
 
 class SizeSelector(tk.Toplevel):
 
-    def __init__(self, master: tk.Frame):
+    def __init__(self, master: tk.Frame, on_resize: typing.Callable[[int, int], None]):
         super().__init__(master)
+        self._on_resize = on_resize
         self._frame: typing.Optional[tk.Frame] = None
         self._confirm_button: typing.Optional[tk.Button] = None
 
@@ -102,4 +103,6 @@ class SizeSelector(tk.Toplevel):
         )
 
     def _on_confirm(self) -> None:
-        print(f"Confirming size ({self._width_value},{self._height_value})")
+        assert self._width_value is not None and self._height_value is not None
+        self._on_resize(self._width_value, self._height_value)
+        self.destroy()

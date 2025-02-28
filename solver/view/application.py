@@ -28,9 +28,14 @@ class Application(tk.Frame):
         self._size_button.pack()
 
     def _on_changesize(self) -> None:
-        size_selector = sizeselector.SizeSelector(self)
+        size_selector = sizeselector.SizeSelector(self, on_resize=self._on_changesize_confirm)
         size_selector.render()
         size_selector.grab_set()
+    
+    def _on_changesize_confirm(self, width: int, height: int) -> None:
+        self._puzzle_state.reset(width, height)
+        assert self._puzzle_view is not None
+        self._puzzle_view.render()
 
 
 def main(puzzle_state: model.PuzzleState) -> None:
