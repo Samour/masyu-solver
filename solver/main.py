@@ -1,10 +1,9 @@
-from . import model
-from .view import application
+from . import model, view
 
 
 def main() -> None:
     puzzle_state = model.PuzzleState(5, 5)
-    application.main(puzzle_state)
+    view.main(puzzle_state)
 
 
 if __name__ == "__main__":
