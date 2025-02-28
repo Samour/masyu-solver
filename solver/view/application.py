@@ -10,32 +10,55 @@ class Application(tk.Frame):
         super().__init__(master)
         self._puzzle_state = puzzle_state
         self._puzzle_view: typing.Optional[puzzle.PuzzleView] = None
-        self._size_button: typing.Optional[tk.Button] = None
+        self._change_size_button: typing.Optional[_ChangeSizeButton] = None
 
     def render(self) -> None:
         if self._puzzle_view is not None:
             self._puzzle_view.destroy()
-        if self._size_button is not None:
-            self._size_button.destroy()
+        if self._change_size_button is not None:
+            self._change_size_button.destroy()
 
         self.pack(padx=50, pady=30)
         self._puzzle_view = puzzle.PuzzleView(self, self._puzzle_state)
         self._puzzle_view.render()
 
+        self._change_size_button = _ChangeSizeButton(
+            self,
+            puzzle_state=self._puzzle_state,
+            rerender_puzzle=self._puzzle_view.render,
+        )
+        self._change_size_button.render()
+
+
+class _ChangeSizeButton(tk.Frame):
+
+    def __init__(
+        self,
+        master: tk.Frame,
+        puzzle_state: model.PuzzleState,
+        rerender_puzzle: typing.Callable[[], None],
+    ):
+        super().__init__(master)
+        self._puzzle_state = puzzle_state
+        self._rerender_puzzle = rerender_puzzle
+
+    def render(self) -> None:
         self._size_button = tk.Button(
             self, text="Change size", command=self._on_changesize
         )
         self._size_button.pack()
+        self.pack()
 
     def _on_changesize(self) -> None:
-        size_selector = sizeselector.SizeSelector(self, on_resize=self._on_changesize_confirm)
+        size_selector = sizeselector.SizeSelector(
+            self, on_resize=self._on_changesize_confirm
+        )
         size_selector.render()
         size_selector.grab_set()
-    
+
     def _on_changesize_confirm(self, width: int, height: int) -> None:
         self._puzzle_state.reset(width, height)
-        assert self._puzzle_view is not None
-        self._puzzle_view.render()
+        self._rerender_puzzle()
 
 
 def main(puzzle_state: model.PuzzleState) -> None:
