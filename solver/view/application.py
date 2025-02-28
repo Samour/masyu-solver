@@ -1,6 +1,7 @@
 import tkinter as tk
+from tkinter import filedialog
 import typing
-from solver import model
+from solver import model, serialization
 from . import puzzle, sizeselector
 
 
@@ -22,7 +23,7 @@ class Application(tk.Frame):
             self._save_load_controls.destroy()
 
         self.pack(padx=50, pady=30)
-        self._puzzle_view = puzzle.PuzzleView(self, self._puzzle_state)
+        self._puzzle_view = puzzle.PuzzleView(self, puzzle_state=self._puzzle_state)
         self._puzzle_view.render()
 
         self._change_size_button = _ChangeSizeButton(
@@ -31,7 +32,9 @@ class Application(tk.Frame):
             rerender_puzzle=self._puzzle_view.render,
         )
         self._change_size_button.render()
-        self._save_load_controls = _SaveLoadControls(self)
+        self._save_load_controls = _SaveLoadControls(
+            self, puzzle_state=self._puzzle_state
+        )
         self._save_load_controls.render()
 
 
@@ -68,8 +71,9 @@ class _ChangeSizeButton(tk.Frame):
 
 class _SaveLoadControls(tk.Frame):
 
-    def __init__(self, master: tk.Frame):
+    def __init__(self, master: tk.Frame, puzzle_state: model.PuzzleState):
         super().__init__(master)
+        self._puzzle_state = puzzle_state
         self._load_button: typing.Optional[tk.Button] = None
         self._save_button: typing.Optional[tk.Button] = None
 
@@ -81,9 +85,19 @@ class _SaveLoadControls(tk.Frame):
 
         self._load_button = tk.Button(self, text="Load puzzle")
         self._load_button.pack(side="left", padx=5)
-        self._save_button = tk.Button(self, text="Save puzzle")
+        self._save_button = tk.Button(
+            self, text="Save puzzle", command=self._on_save_click
+        )
         self._save_button.pack(padx=5)
         self.pack(pady=5)
+
+    def _on_save_click(self) -> None:
+        fh = filedialog.asksaveasfile()
+        if fh is None:
+            return
+
+        with fh:
+            serialization.PuzzleSerializer(fh).serialize(self._puzzle_state)
 
 
 def main(puzzle_state: model.PuzzleState) -> None:
