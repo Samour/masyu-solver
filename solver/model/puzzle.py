@@ -38,10 +38,10 @@ class PuzzleState:
         self._height = height
         self._tiles = [[TileType.ANY for _y in range(height)] for _x in range(width)]
         self._hlines = [
-            [LineState.ANY for _y in range(height - 1)] for _x in range(width - 1)
+            [LineState.ANY for _y in range(height)] for _x in range(width - 1)
         ]
         self._vlines = [
-            [LineState.ANY for _y in range(height - 1)] for _x in range(width - 1)
+            [LineState.ANY for _y in range(height - 1)] for _x in range(width)
         ]
 
     def apply(self, state: typing.Self) -> None:
@@ -72,21 +72,21 @@ class PuzzleState:
         self._tiles[x][y] = tile
 
     def get_hline(self, x: int, y: int) -> typing.Optional[LineState]:
-        if x < 0 or x >= self.width - 1 or y < 0 or y >= self.height - 1:
+        if x < 0 or x >= self.width - 1 or y < 0 or y >= self.height:
             return None
 
         return self._hlines[x][y]
 
     def set_hline(self, x: int, y: int, state: LineState) -> None:
-        assert x >= 0 and x < self.width - 1 and y >= 0 and y < self.height - 1
+        assert x >= 0 and x < self.width - 1 and y >= 0 and y < self.height
         self._hlines[x][y] = state
 
     def get_vline(self, x: int, y: int) -> typing.Optional[LineState]:
-        if x < 0 or x >= self.width - 1 or y < 0 or y >= self.height - 1:
+        if x < 0 or x >= self.width or y < 0 or y >= self.height - 1:
             return None
 
         return self._vlines[x][y]
 
     def set_vline(self, x: int, y: int, state: LineState) -> None:
-        assert x >= 0 and x < self.width - 1 and y >= 0 and y < self.height - 1
+        assert x >= 0 and x < self.width and y >= 0 and y < self.height - 1
         self._vlines[x][y] = state

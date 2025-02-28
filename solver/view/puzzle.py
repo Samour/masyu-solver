@@ -10,6 +10,7 @@ class _Colours:
     DOT = "black"
     CIRCLE_OUTLINE = "black"
     CIRCLE_INNER = "white"
+    LINE = "black"
 
 
 class _LineType(enum.Enum):
@@ -21,6 +22,7 @@ class _Coords:
     OFFSET = 2
     TILE_SIZE = 30
     CLICK_PROXIMITY = 10
+    LINE_WIDTH = 1
 
     class Dot:
         RADIUS = 1
@@ -160,7 +162,10 @@ class PuzzleView(tk.Frame):
             return
         d, x, y = line
 
-        print(f"handle_solve_leftclick: ({d}, {x}, {y})")
+        if d == _LineType.HORIZONTAL:
+            self._update_hline(x, y, True)
+        elif d == _LineType.VERTICAL:
+            self._update_vline(x, y, True)
 
     def _handle_rightclick(self, e: tk.Event) -> None:  # type: ignore[type-arg]
         if self._state.view_mode == state.ViewMode.EDITING:
@@ -184,7 +189,10 @@ class PuzzleView(tk.Frame):
             return
         d, x, y = line
 
-        print(f"handle_solve_rightclick: ({d}, {x}, {y})")
+        if d == _LineType.HORIZONTAL:
+            self._update_hline(x, y, False)
+        elif d == _LineType.VERTICAL:
+            self._update_vline(x, y, False)
 
     def _map_to_line(
         self, c_x: int, c_y: int
@@ -210,6 +218,52 @@ class PuzzleView(tk.Frame):
 
         return line
 
+    def _update_hline(self, x: int, y: int, forward: bool) -> None:
+        old_state = self._state.puzzle_state.get_hline(x, y)
+        if old_state is None:
+            return
+
+        new_state = (
+            self._next_line_state(old_state)
+            if forward
+            else self._previous_line_state(old_state)
+        )
+        self._state.puzzle_state.set_hline(x, y, new_state)
+        assert self._canvas is not None
+        self._tiles[x][y].draw(self._canvas)
+        self._tiles[x + 1][y].draw(self._canvas)
+
+    def _update_vline(self, x: int, y: int, forward: bool) -> None:
+        old_state = self._state.puzzle_state.get_vline(x, y)
+        if old_state is None:
+            return
+
+        new_state = (
+            self._next_line_state(old_state)
+            if forward
+            else self._previous_line_state(old_state)
+        )
+        self._state.puzzle_state.set_vline(x, y, new_state)
+        assert self._canvas is not None
+        self._tiles[x][y].draw(self._canvas)
+        self._tiles[x][y + 1].draw(self._canvas)
+
+    def _next_line_state(self, line: model.LineState) -> model.LineState:
+        if line == model.LineState.ANY:
+            return model.LineState.LINE
+        elif line == model.LineState.LINE:
+            return model.LineState.EMPTY
+        elif line == model.LineState.EMPTY:
+            return model.LineState.ANY
+
+    def _previous_line_state(self, line: model.LineState) -> model.LineState:
+        if line == model.LineState.ANY:
+            return model.LineState.EMPTY
+        elif line == model.LineState.EMPTY:
+            return model.LineState.LINE
+        elif line == model.LineState.LINE:
+            return model.LineState.ANY
+
 
 class _Tile:
 
@@ -217,7 +271,7 @@ class _Tile:
         self._puzzle_state = puzzle_state
         self._x = x
         self._y = y
-        self._handle: typing.Optional[int] = None
+        self._handles: list[int] = []
 
     @property
     def _type(self) -> model.TileType:
@@ -225,12 +279,42 @@ class _Tile:
         assert tile_type is not None
         return tile_type
 
+    @property
+    def _line_up(self) -> bool:
+        return (
+            self._puzzle_state.get_vline(self._x, self._y - 1) == model.LineState.LINE
+        )
+
+    @property
+    def _line_down(self) -> bool:
+        return self._puzzle_state.get_vline(self._x, self._y) == model.LineState.LINE
+
+    @property
+    def _line_left(self) -> bool:
+        return (
+            self._puzzle_state.get_hline(self._x - 1, self._y) == model.LineState.LINE
+        )
+
+    @property
+    def _line_right(self) -> bool:
+        return self._puzzle_state.get_hline(self._x, self._y) == model.LineState.LINE
+
     def _set_tile(self, tile: model.TileType) -> None:
         self._puzzle_state.set_tile(self._x, self._y, tile)
 
     def draw(self, canvas: tk.Canvas) -> None:
-        if self._handle is not None:
-            canvas.delete(self._handle)
+        for h in self._handles:
+            canvas.delete(h)
+        self._handles = []
+
+        if self._line_up:
+            self._draw_line_up(canvas)
+        if self._line_down:
+            self._draw_line_down(canvas)
+        if self._line_left:
+            self._draw_line_left(canvas)
+        if self._line_right:
+            self._draw_line_right(canvas)
 
         if self._type == model.TileType.ANY:
             self._draw_dot(canvas)
@@ -239,36 +323,86 @@ class _Tile:
         elif self._type == model.TileType.STRAIGHT:
             self._draw_hollow_circle(canvas)
 
+    def _draw_line_up(self, canvas: tk.Canvas) -> None:
+        x0 = (self._x + 0.5) * _Coords.TILE_SIZE - _Coords.LINE_WIDTH + _Coords.OFFSET
+        y0 = self._y * _Coords.TILE_SIZE + _Coords.OFFSET
+        x1 = (self._x + 0.5) * _Coords.TILE_SIZE + _Coords.LINE_WIDTH + _Coords.OFFSET
+        y1 = (self._y + 0.5) * _Coords.TILE_SIZE + _Coords.OFFSET
+        self._handles.append(
+            canvas.create_rectangle(
+                x0, y0, x1, y1, fill=_Colours.LINE, outline=_Colours.LINE
+            )
+        )
+
+    def _draw_line_down(self, canvas: tk.Canvas) -> None:
+        x0 = (self._x + 0.5) * _Coords.TILE_SIZE - _Coords.LINE_WIDTH + _Coords.OFFSET
+        y0 = (self._y + 0.5) * _Coords.TILE_SIZE + _Coords.OFFSET
+        x1 = (self._x + 0.5) * _Coords.TILE_SIZE + _Coords.LINE_WIDTH + _Coords.OFFSET
+        y1 = (self._y + 1) * _Coords.TILE_SIZE + _Coords.OFFSET
+        self._handles.append(
+            canvas.create_rectangle(
+                x0, y0, x1, y1, fill=_Colours.LINE, outline=_Colours.LINE
+            )
+        )
+
+    def _draw_line_left(self, canvas: tk.Canvas) -> None:
+        x0 = self._x * _Coords.TILE_SIZE + _Coords.OFFSET
+        y0 = (self._y + 0.5) * _Coords.TILE_SIZE - _Coords.LINE_WIDTH + _Coords.OFFSET
+        x1 = (self._x + 0.5) * _Coords.TILE_SIZE + _Coords.OFFSET
+        y1 = (self._y + 0.5) * _Coords.TILE_SIZE + _Coords.LINE_WIDTH + _Coords.OFFSET
+        self._handles.append(
+            canvas.create_rectangle(
+                x0, y0, x1, y1, fill=_Colours.LINE, outline=_Colours.LINE
+            )
+        )
+
+    def _draw_line_right(self, canvas: tk.Canvas) -> None:
+        x0 = (self._x + 0.5) * _Coords.TILE_SIZE + _Coords.OFFSET
+        y0 = (self._y + 0.5) * _Coords.TILE_SIZE - _Coords.LINE_WIDTH + _Coords.OFFSET
+        x1 = (self._x + 1) * _Coords.TILE_SIZE + _Coords.OFFSET
+        y1 = (self._y + 0.5) * _Coords.TILE_SIZE + _Coords.LINE_WIDTH + _Coords.OFFSET
+        self._handles.append(
+            canvas.create_rectangle(
+                x0, y0, x1, y1, fill=_Colours.LINE, outline=_Colours.LINE
+            )
+        )
+
     def _draw_dot(self, canvas: tk.Canvas) -> None:
         dot_x0, dot_y0, dot_x1, dot_y1 = _Coords.Dot.get_rect(self._x, self._y)
-        self._handle = canvas.create_oval(
-            dot_x0, dot_y0, dot_x1, dot_y1, fill=_Colours.DOT, outline=_Colours.DOT
+        self._handles.append(
+            canvas.create_oval(
+                dot_x0, dot_y0, dot_x1, dot_y1, fill=_Colours.DOT, outline=_Colours.DOT
+            )
         )
 
     def _draw_solid_circle(self, canvas: tk.Canvas) -> None:
         circle_x0, circle_y0, circle_x1, circle_y1 = _Coords.Circle.get_rect(
             self._x, self._y
         )
-        self._handle = canvas.create_oval(
-            circle_x0,
-            circle_y0,
-            circle_x1,
-            circle_y1,
-            fill=_Colours.CIRCLE_OUTLINE,
-            outline=_Colours.CIRCLE_OUTLINE,
+        self._handles.append(
+            canvas.create_oval(
+                circle_x0,
+                circle_y0,
+                circle_x1,
+                circle_y1,
+                fill=_Colours.CIRCLE_OUTLINE,
+                outline=_Colours.CIRCLE_OUTLINE,
+            )
         )
 
     def _draw_hollow_circle(self, canvas: tk.Canvas) -> None:
         circle_x0, circle_y0, circle_x1, circle_y1 = _Coords.Circle.get_rect(
             self._x, self._y
         )
-        self._handle = canvas.create_oval(
-            circle_x0,
-            circle_y0,
-            circle_x1,
-            circle_y1,
-            fill=_Colours.CIRCLE_INNER,
-            outline=_Colours.CIRCLE_OUTLINE,
+        self._handles.append(
+            canvas.create_oval(
+                circle_x0,
+                circle_y0,
+                circle_x1,
+                circle_y1,
+                fill=_Colours.CIRCLE_INNER,
+                outline=_Colours.CIRCLE_OUTLINE,
+            )
         )
 
     def next_type(self) -> None:
