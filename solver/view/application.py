@@ -10,14 +10,14 @@ class Application(tk.Frame):
         super().__init__(master)
         self._puzzle_state = puzzle_state
         self._puzzle_view: typing.Optional[puzzle.PuzzleView] = None
-        self._change_size_button: typing.Optional[controls.ChangeSizeButton] = None
+        self._puzzle_controls: typing.Optional[controls.PuzzleControls] = None
         self._save_load_controls: typing.Optional[controls.SaveLoadControls] = None
 
     def render(self) -> None:
         if self._puzzle_view is not None:
             self._puzzle_view.destroy()
-        if self._change_size_button is not None:
-            self._change_size_button.destroy()
+        if self._puzzle_controls is not None:
+            self._puzzle_controls.destroy()
         if self._save_load_controls is not None:
             self._save_load_controls.destroy()
 
@@ -25,12 +25,12 @@ class Application(tk.Frame):
         self._puzzle_view = puzzle.PuzzleView(self, puzzle_state=self._puzzle_state)
         self._puzzle_view.render()
 
-        self._change_size_button = controls.ChangeSizeButton(
+        self._puzzle_controls = controls.PuzzleControls(
             self,
             puzzle_state=self._puzzle_state,
             rerender_puzzle=self._puzzle_view.render,
         )
-        self._change_size_button.render()
+        self._puzzle_controls.render()
         self._save_load_controls = controls.SaveLoadControls(
             self,
             puzzle_state=self._puzzle_state,

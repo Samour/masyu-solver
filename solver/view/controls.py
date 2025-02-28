@@ -5,7 +5,7 @@ from solver import model, serialization
 from . import sizeselector
 
 
-class ChangeSizeButton(tk.Frame):
+class PuzzleControls(tk.Frame):
 
     def __init__(
         self,
@@ -16,12 +16,48 @@ class ChangeSizeButton(tk.Frame):
         super().__init__(master)
         self._puzzle_state = puzzle_state
         self._rerender_puzzle = rerender_puzzle
+        self._edit_mode_buttons: typing.Optional[_EditModeButtons] = None
+        self._solve_mode_buttons: typing.Optional[_SolveModeButtons] = None
 
     def render(self) -> None:
+        if self._edit_mode_buttons is not None:
+            self._edit_mode_buttons.destroy()
+        if self._solve_mode_buttons is not None:
+            self._solve_mode_buttons.destroy()
+
+        self._edit_mode_buttons = _EditModeButtons(
+            self, puzzle_state=self._puzzle_state, rerender_puzzle=self._rerender_puzzle
+        )
+        self._edit_mode_buttons.render()
+        self.pack()
+
+
+class _EditModeButtons(tk.Frame):
+
+    def __init__(
+        self,
+        master: tk.Frame,
+        puzzle_state: model.PuzzleState,
+        rerender_puzzle: typing.Callable[[], None],
+    ):
+        super().__init__(master)
+        self._puzzle_state = puzzle_state
+        self._rerender_puzzle = rerender_puzzle
+        self._size_button: typing.Optional[tk.Button] = None
+        self._change_mode_button: typing.Optional[tk.Button] = None
+
+    def render(self) -> None:
+        if self._size_button is not None:
+            self._size_button.destroy()
+        if self._change_mode_button is not None:
+            self._change_mode_button.destroy()
+
         self._size_button = tk.Button(
             self, text="Change size", command=self._on_changesize
         )
-        self._size_button.pack()
+        self._size_button.pack(side="left", padx=5)
+        self._change_mode_button = tk.Button(self, text="Start solving")
+        self._change_mode_button.pack(padx=5)
         self.pack(pady=5)
 
     def _on_changesize(self) -> None:
@@ -34,6 +70,15 @@ class ChangeSizeButton(tk.Frame):
     def _on_changesize_confirm(self, width: int, height: int) -> None:
         self._puzzle_state.reset(width, height)
         self._rerender_puzzle()
+
+
+class _SolveModeButtons(tk.Frame):
+
+    def __init__(self, master: tk.Frame):
+        super().__init__(master)
+
+    def render(self) -> None:
+        pass
 
 
 class SaveLoadControls(tk.Frame):
