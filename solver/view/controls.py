@@ -154,7 +154,7 @@ class SolvingControls(tk.Frame):
 
     def _on_auto_solve(self) -> None:
         self._state.controls_disabled = True
-        self._state.rerenger_all()
+        self._state.rerender_all()
 
 
 class SaveLoadControls(tk.Frame):

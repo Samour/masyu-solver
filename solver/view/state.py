@@ -32,7 +32,7 @@ class ViewState:
     def register_rerender_all_hander(self, handler: typing.Callable[[], None]) -> None:
         self._rerender_all_handler = handler
 
-    def rerenger_all(self) -> None:
+    def rerender_all(self) -> None:
         assert self._rerender_all_handler is not None
         self._rerender_all_handler()
 
