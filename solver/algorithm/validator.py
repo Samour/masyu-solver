@@ -75,11 +75,11 @@ class SolutionValidator:
             return False
 
         _, c_x, c_y = self._current_position
-        vertex, (n_d, n_x, n_y) = next_pos
-        if not self._validate_vertex(vertex, n_d):
+        (v_x, v_y), (n_d, n_x, n_y) = next_pos
+        if not self._validate_vertex(v_x, v_y):
             return False
 
-        self._vertices.discard(vertex)
+        self._vertices.discard((v_x, v_y))
         self._lines.remove(self._current_position)
         if n_x < c_x or n_y < c_y:
             self._direction = _MovementDirection.BACKWARD
@@ -134,19 +134,23 @@ class SolutionValidator:
 
         return lines
 
-    def _validate_vertex(
-        self, vertex: typing.Tuple[int, int], next_line_direction: _LineDirection
-    ) -> bool:
+    def _validate_vertex(self, x: int, y: int) -> bool:
         # This only considers the immediate vertex right now, not whether there is an adjacent corner or not
         assert self._current_position is not None
-        v_x, v_y = vertex
-        tile_type = self._state.get_tile(v_x, v_y)
-        d, _, _ = self._current_position
+        tile_type = self._state.get_tile(x, y)
 
         if tile_type == model.TileType.ANY:
             return True
         elif tile_type == model.TileType.STRAIGHT:
-            return d == next_line_direction
+            return self._is_corner(x, y) is False
         elif tile_type == model.TileType.CORNER:
-            return d != next_line_direction
+            return self._is_corner(x, y) is True
         assert False
+
+    def _is_corner(self, x: int, y: int) -> typing.Optional[bool]:
+        lines = self._enumerate_lines(x, y)
+        if len(lines) != 2:
+            return None
+
+        (d_a, _, _), (d_b, _, _) = lines
+        return d_a != d_b
