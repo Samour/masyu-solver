@@ -135,17 +135,39 @@ class SolutionValidator:
         return lines
 
     def _validate_vertex(self, x: int, y: int) -> bool:
-        # This only considers the immediate vertex right now, not whether there is an adjacent corner or not
         assert self._current_position is not None
         tile_type = self._state.get_tile(x, y)
 
         if tile_type == model.TileType.ANY:
             return True
-        elif tile_type == model.TileType.STRAIGHT:
-            return self._is_corner(x, y) is False
+
+        adjacent_v = self._enumerate_vertices(x, y)
+        if len(adjacent_v) != 2:
+            return False
+        (a0_x, a0_y), (a1_x, a1_y) = adjacent_v
+        a0_c = self._is_corner(a0_x, a0_y)
+        a1_c = self._is_corner(a1_x, a1_y)
+        if a0_c is None or a1_c is None:
+            return False
+        has_adjacent_corner = a0_c or a1_c
+
+        if tile_type == model.TileType.STRAIGHT:
+            return self._is_corner(x, y) is False and has_adjacent_corner
         elif tile_type == model.TileType.CORNER:
-            return self._is_corner(x, y) is True
+            return self._is_corner(x, y) is True and not has_adjacent_corner
         assert False
+
+    def _enumerate_vertices(self, x: int, y: int) -> set[typing.Tuple[int, int]]:
+        vertices: set[typing.Tuple[int, int]] = set()
+        for d, v_x, v_y in self._enumerate_lines(x, y):
+            vertices.add((v_x, v_y))
+            if d == _LineDirection.HORIZONTAL:
+                vertices.add((v_x + 1, v_y))
+            elif d == _LineDirection.VERTICAL:
+                vertices.add((v_x, v_y + 1))
+
+        vertices.remove((x, y))
+        return vertices
 
     def _is_corner(self, x: int, y: int) -> typing.Optional[bool]:
         lines = self._enumerate_lines(x, y)
