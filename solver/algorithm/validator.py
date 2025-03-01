@@ -19,7 +19,7 @@ class _MovementDirection(enum.Enum):
     BACKWARD = 2  # Left or up
 
 
-LineSpec = typing.Tuple[_LineDirection, int, int]
+_LineSpec = typing.Tuple[_LineDirection, int, int]
 
 
 class SolutionValidator:
@@ -27,9 +27,9 @@ class SolutionValidator:
     def __init__(self, puzzle_state: model.PuzzleState):
         self._state = puzzle_state
         self._vertices: set[typing.Tuple[int, int]] = set()
-        self._lines: set[LineSpec] = set()
-        self._starting_point: typing.Optional[LineSpec] = None
-        self._current_position: typing.Optional[LineSpec] = None
+        self._lines: set[_LineSpec] = set()
+        self._starting_point: typing.Optional[_LineSpec] = None
+        self._current_position: typing.Optional[_LineSpec] = None
         self._direction: _MovementDirection = _MovementDirection.FORWARD
 
     def is_solved(self) -> SolutionValue:
@@ -102,7 +102,7 @@ class SolutionValidator:
 
     def _next_position(
         self,
-    ) -> typing.Optional[typing.Tuple[typing.Tuple[int, int], LineSpec]]:
+    ) -> typing.Optional[typing.Tuple[typing.Tuple[int, int], _LineSpec]]:
         assert self._current_position is not None
         t_x, t_y = self._next_vertex()
         adjacent_lines = self._enumerate_lines(t_x, t_y)
@@ -132,8 +132,8 @@ class SolutionValidator:
         assert x is not None and y is not None
         return x, y
 
-    def _enumerate_lines(self, x: int, y: int) -> set[LineSpec]:
-        lines: set[LineSpec] = set()
+    def _enumerate_lines(self, x: int, y: int) -> set[_LineSpec]:
+        lines: set[_LineSpec] = set()
         if self._state.get_hline(x, y) == model.LineState.LINE:
             lines.add((_LineDirection.HORIZONTAL, x, y))
         if self._state.get_hline(x - 1, y) == model.LineState.LINE:
