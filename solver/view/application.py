@@ -1,7 +1,7 @@
 import tkinter as tk
 import typing
-from solver import model
-from . import controls, puzzle, state
+from solver import messaging, model
+from . import bridge, controls, puzzle, state
 
 
 class Application(tk.Frame):
@@ -40,11 +40,18 @@ class Application(tk.Frame):
 
 
 def main(puzzle_state: model.PuzzleState) -> None:
-    view_state = state.ViewState(puzzle_state=puzzle_state)
+    message_bus = messaging.MessageBus()
+    view_state = state.ViewState(puzzle_state=puzzle_state, publisher=message_bus)
 
     root = tk.Tk()
     app = Application(root, view_state=view_state)
     root.title("Masyu Solver")
     root.geometry("+500+200")
+
+    vsmh = bridge.ViewStateMessageHandler(view_state=view_state)
+    event_bridge = bridge.EventBridge(app=root, on_message=vsmh.handle_message)
+    message_bus.subscribe(event_bridge.message_handler)
+    event_bridge.start()
+
     app.render()
     root.mainloop()
