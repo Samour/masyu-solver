@@ -19,7 +19,8 @@ class Solver:
         self._state = puzzle_state
         self._positions: set[_SolverPosition] = set()
         self._vertex_solvers: list[_VertexSolver] = [
-            _FillEmptyEdgesPS(puzzle_state=puzzle_state)
+            _FillEmptyEdgesVS(puzzle_state=puzzle_state),
+            _OnlyLineOptionVS(puzzle_state=puzzle_state),
         ]
 
     def solve(self) -> None:
@@ -118,8 +119,12 @@ class _Vertex:
         return self._count_adjacent(model.LineState.LINE)
 
     @property
+    def count_any(self) -> int:
+        return self._count_adjacent(model.LineState.ANY)
+
+    @property
     def is_filled(self) -> bool:
-        return self._count_adjacent(model.LineState.ANY) == 0
+        return self.count_any == 0
 
     def _count_adjacent(self, state: model.LineState) -> int:
         lines = 0
@@ -144,7 +149,7 @@ class _VertexSolver(abc.ABC):
         pass
 
 
-class _FillEmptyEdgesPS(_VertexSolver):
+class _FillEmptyEdgesVS(_VertexSolver):
 
     def make_updates(self, vertex: _Vertex) -> set[_SolverPosition]:
         if vertex.count_lines != 2:
@@ -162,6 +167,29 @@ class _FillEmptyEdgesPS(_VertexSolver):
             updates.add((_ItemType.HLINE, vertex.x - 1, vertex.y))
         if vertex.line_right == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.EMPTY)
+            updates.add((_ItemType.HLINE, vertex.x, vertex.y))
+
+        return updates
+
+
+class _OnlyLineOptionVS(_VertexSolver):
+
+    def make_updates(self, vertex: _Vertex) -> set[_SolverPosition]:
+        if vertex.count_lines != 1 or vertex.count_any != 1:
+            return set()
+
+        updates: set[_SolverPosition] = set()
+        if vertex.line_up == model.LineState.ANY:
+            self.puzzle_state.set_vline(vertex.x, vertex.y - 1, model.LineState.LINE)
+            updates.add((_ItemType.VLINE, vertex.x, vertex.y - 1))
+        if vertex.line_down == model.LineState.ANY:
+            self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.LINE)
+            updates.add((_ItemType.VLINE, vertex.x, vertex.y))
+        if vertex.line_left == model.LineState.ANY:
+            self.puzzle_state.set_hline(vertex.x - 1, vertex.y, model.LineState.LINE)
+            updates.add((_ItemType.HLINE, vertex.x - 1, vertex.y))
+        if vertex.line_right == model.LineState.ANY:
+            self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.LINE)
             updates.add((_ItemType.HLINE, vertex.x, vertex.y))
 
         return updates
