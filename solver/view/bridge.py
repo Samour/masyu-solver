@@ -8,7 +8,9 @@ class EventBridge:
 
     _TIMEOUT = 50
 
-    def __init__(self, app: tk.Tk, on_message: typing.Callable[[messaging.Message], None]):
+    def __init__(
+        self, app: tk.Tk, on_message: typing.Callable[[messaging.Message], None]
+    ):
         self._app = app
         self._on_message = on_message
         self._buffer: list[messaging.Message] = []
@@ -18,11 +20,11 @@ class EventBridge:
 
     def start(self) -> None:
         self._app.after(self._TIMEOUT, self._timeout_cb)
-    
+
     def _timeout_cb(self) -> None:
         while len(self._buffer) > 0:
             self._on_message(self._buffer.pop(0))
-        
+
         self._app.after(self._TIMEOUT, self._timeout_cb)
 
 

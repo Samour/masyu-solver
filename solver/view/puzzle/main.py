@@ -76,7 +76,7 @@ class PuzzleView(tk.Frame):
         for crosses in self._vcrosses:
             for c in crosses:
                 c.draw(self._canvas)
-        
+
         self._state.register_rerender_hline(self._handle_rerender_hline)
         self._state.register_rerender_vline(self._handle_rerender_vline)
 
@@ -205,13 +205,13 @@ class PuzzleView(tk.Frame):
             return model.LineState.LINE
         elif line == model.LineState.LINE:
             return model.LineState.ANY
-    
+
     def _handle_rerender_hline(self, x: int, y: int) -> None:
         assert self._canvas is not None
         self._tiles[x][y].draw(self._canvas)
         self._tiles[x + 1][y].draw(self._canvas)
         self._hcrosses[x][y].draw(self._canvas)
-    
+
     def _handle_rerender_vline(self, x: int, y: int) -> None:
         assert self._canvas is not None
         self._tiles[x][y].draw(self._canvas)

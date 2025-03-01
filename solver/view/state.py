@@ -12,9 +12,14 @@ class ViewState:
 
     def __init__(self, puzzle_state: model.PuzzleState, publisher: messaging.Publisher):
         self._puzzle_state = puzzle_state
+        self._publisher = publisher
         self._rerender_puzzle_handler: typing.Optional[typing.Callable[[], None]] = None
-        self._rerender_hline_handler: typing.Optional[typing.Callable[[int, int], None]] = None
-        self._rerender_vline_handler: typing.Optional[typing.Callable[[int, int], None]] = None
+        self._rerender_hline_handler: typing.Optional[
+            typing.Callable[[int, int], None]
+        ] = None
+        self._rerender_vline_handler: typing.Optional[
+            typing.Callable[[int, int], None]
+        ] = None
 
         self.view_mode: ViewMode = ViewMode.EDITING
 
@@ -30,15 +35,19 @@ class ViewState:
     def rerender_puzzle(self) -> None:
         assert self._rerender_puzzle_handler is not None
         self._rerender_puzzle_handler()
-    
-    def register_rerender_hline(self, handler: typing.Callable[[int, int], None]) -> None:
+
+    def register_rerender_hline(
+        self, handler: typing.Callable[[int, int], None]
+    ) -> None:
         self._rerender_hline_handler = handler
 
     def rerender_hline(self, x: int, y: int) -> None:
         if self._rerender_hline_handler is not None:
             self._rerender_hline_handler(x, y)
 
-    def register_rerender_vline(self, handler: typing.Callable[[int, int], None]) -> None:
+    def register_rerender_vline(
+        self, handler: typing.Callable[[int, int], None]
+    ) -> None:
         self._rerender_vline_handler = handler
 
     def rerender_vline(self, x: int, y: int) -> None:
