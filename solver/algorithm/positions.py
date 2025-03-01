@@ -1,8 +1,29 @@
+from dataclasses import dataclass
+import enum
 import typing
 from solver import model
 
 
 SolverPosition = typing.Tuple[int, int]
+
+
+class LineDirection(enum.Enum):
+    HORIZONTAL = 1
+    VERTICAL = 2
+
+
+class GuessPriority:
+    PARTIAL_CORNER = 5
+    UNKNOWN_RESTRICTIVE_TILE = 3
+    PARTIAL_ANY_TILE = 1
+    REMAINING = 0
+
+
+@dataclass(frozen=True)
+class GuessCandidate:
+    direction: LineDirection
+    x: int
+    y: int
 
 
 class Vertex:
