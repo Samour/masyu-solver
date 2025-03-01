@@ -147,9 +147,14 @@ class SolvingControls(tk.Frame):
         self.pack()
 
     def _check_solution(self) -> None:
-        if algorithm.SolutionValidator(self._state.puzzle_state).is_solved():
+        solution_state = algorithm.SolutionValidator(
+            puzzle_state=self._state.puzzle_state
+        ).is_solved()
+        if solution_state == algorithm.SolutionValue.SOLVED:
             messagebox.showinfo(message="Solution is correct!")
-        else:
+        elif solution_state == algorithm.SolutionValue.INVALID:
+            messagebox.showinfo(message="There are problems in the solution")
+        elif solution_state == algorithm.SolutionValue.UNSOLVED:
             messagebox.showinfo(message="Puzzle is not solved")
 
     def _on_auto_solve(self) -> None:

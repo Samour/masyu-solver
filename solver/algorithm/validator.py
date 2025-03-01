@@ -3,6 +3,12 @@ import typing
 from solver import model
 
 
+class SolutionValue(enum.Enum):
+    UNSOLVED = 1
+    SOLVED = 2
+    INVALID = 3
+
+
 class _LineDirection(enum.Enum):
     HORIZONTAL = 1
     VERTICAL = 2
@@ -26,21 +32,26 @@ class SolutionValidator:
         self._current_position: typing.Optional[LineSpec] = None
         self._direction: _MovementDirection = _MovementDirection.FORWARD
 
-    def is_solved(self) -> bool:
+    def is_solved(self) -> SolutionValue:
         self._discover_vertices()
         self._discover_lines()
         if self._starting_point is None:
-            return False
+            return SolutionValue.UNSOLVED
 
         self._direction = _MovementDirection.FORWARD
         while True:
-            if not self._step():
-                return False
+            step_result = self._step()
+            if step_result is not None:
+                return step_result
 
             if self._current_position == self._starting_point:
                 break
 
-        return len(self._vertices) == 0 and len(self._lines) == 0
+        return (
+            SolutionValue.SOLVED
+            if len(self._vertices) == 0 and len(self._lines) == 0
+            else SolutionValue.INVALID
+        )
 
     def _discover_vertices(self) -> None:
         self._vertices = set()
@@ -68,16 +79,16 @@ class SolutionValidator:
 
         self._current_position = self._starting_point
 
-    def _step(self) -> bool:
+    def _step(self) -> typing.Optional[SolutionValue]:
         assert self._current_position is not None
         next_pos = self._next_position()
         if next_pos is None:
-            return False
+            return SolutionValue.UNSOLVED
 
         _, c_x, c_y = self._current_position
         (v_x, v_y), (n_d, n_x, n_y) = next_pos
         if not self._validate_vertex(v_x, v_y):
-            return False
+            return SolutionValue.INVALID
 
         self._vertices.discard((v_x, v_y))
         self._lines.remove(self._current_position)
@@ -87,7 +98,7 @@ class SolutionValidator:
             self._direction = _MovementDirection.FORWARD
         self._current_position = (n_d, n_x, n_y)
 
-        return True
+        return None
 
     def _next_position(
         self,

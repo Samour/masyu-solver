@@ -26,8 +26,11 @@ class Solver:
             while len(self._positions):
                 self._serve()
 
-            if self._validator.is_solved():
+            solution_state = self._validator.is_solved()
+            if solution_state == validator.SolutionValue.SOLVED:
                 return
+            elif solution_state == validator.SolutionValue.INVALID:
+                assert False  # TODO backtrack here
 
             guesses = self._guess_candidates()
             if len(guesses) == 0:
