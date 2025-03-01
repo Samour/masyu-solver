@@ -11,6 +11,7 @@ class Solver:
             vertex.FillEmptyEdgesVS(puzzle_state=puzzle_state),
             vertex.OnlyLineOptionVS(puzzle_state=puzzle_state),
             vertex.DeadEndVS(puzzle_state=puzzle_state),
+            vertex.StraightLineVS(puzzle_state=puzzle_state),
         ]
 
     def solve(self) -> None:
