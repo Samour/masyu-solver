@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import typing
 from solver import algorithm, serialization
-from . import sizeselector, state
+from . import sizeselector, solvethread, state
 
 
 class PuzzleControls(tk.Frame):
@@ -155,6 +155,10 @@ class SolvingControls(tk.Frame):
     def _on_auto_solve(self) -> None:
         self._state.controls_disabled = True
         self._state.rerender_all()
+
+        solvethread.start_solver(
+            puzzle_state=self._state.puzzle_state, publisher=self._state.publisher
+        )
 
 
 class SaveLoadControls(tk.Frame):

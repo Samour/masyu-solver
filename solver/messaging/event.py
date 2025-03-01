@@ -19,3 +19,7 @@ class UpdateVLine(Message):
     x: int
     y: int
     state: model.LineState
+
+
+class SolverCompleted(Message):
+    pass

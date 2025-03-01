@@ -12,7 +12,7 @@ class ViewState:
 
     def __init__(self, puzzle_state: model.PuzzleState, publisher: messaging.Publisher):
         self._puzzle_state = puzzle_state
-        self._publisher = publisher
+        self.publisher = publisher
         self._rerender_all_handler: typing.Optional[typing.Callable[[], None]] = None
         self._rerender_puzzle_handler: typing.Optional[typing.Callable[[], None]] = None
         self._rerender_hline_handler: typing.Optional[

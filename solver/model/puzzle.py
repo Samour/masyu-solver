@@ -44,7 +44,7 @@ class PuzzleState:
             [LineState.ANY for _y in range(height - 1)] for _x in range(width)
         ]
 
-    def apply(self, state: typing.Self) -> None:
+    def apply(self, state: "PuzzleState") -> None:
         self.reset(state.width, state.height)
         for y in range(state.height):
             for x in range(state.width):

@@ -38,6 +38,8 @@ class ViewStateMessageHandler:
             self._handle_update_hline(message)
         elif isinstance(message, messaging.UpdateVLine):
             self._handle_update_vline(message)
+        elif isinstance(message, messaging.SolverCompleted):
+            self._handle_solver_completed()
 
     def _handle_update_hline(self, message: messaging.UpdateHLine) -> None:
         self._state.puzzle_state.set_hline(message.x, message.y, message.state)
@@ -46,3 +48,7 @@ class ViewStateMessageHandler:
     def _handle_update_vline(self, message: messaging.UpdateVLine) -> None:
         self._state.puzzle_state.set_vline(message.x, message.y, message.state)
         self._state.rerender_vline(message.x, message.y)
+
+    def _handle_solver_completed(self) -> None:
+        self._state.controls_disabled = False
+        self._state.rerender_all()
