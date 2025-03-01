@@ -113,15 +113,20 @@ class SolvingControls(tk.Frame):
         super().__init__(master)
         self._state = view_state
         self._check_button: typing.Optional[tk.Button] = None
+        self._solve_button: typing.Optional[tk.Button] = None
 
     def render(self) -> None:
         if self._check_button is not None:
             self._check_button.destroy()
+        if self._solve_button is not None:
+            self._solve_button.destroy()
 
         self._check_button = tk.Button(
             self, text="Check solution", command=self._check_solution
         )
-        self._check_button.pack()
+        self._check_button.pack(side="left", padx=5)
+        self._solve_button = tk.Button(self, text="Auto solve")
+        self._solve_button.pack(padx=5)
         self.pack()
 
     def _check_solution(self) -> None:
