@@ -10,6 +10,7 @@ class Solver:
         self._vertex_solvers: list[vertex.VertexSolver] = [
             vertex.FillEmptyEdgesVS(puzzle_state=puzzle_state),
             vertex.OnlyLineOptionVS(puzzle_state=puzzle_state),
+            vertex.DeadEndVS(puzzle_state=puzzle_state),
         ]
 
     def solve(self) -> None:

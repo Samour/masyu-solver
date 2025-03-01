@@ -91,6 +91,28 @@ class FillEmptyEdgesVS(VertexSolver):
         return updates
 
 
+class DeadEndVS(VertexSolver):
+
+    def make_updates(self, vertex: Vertex) -> set[positions.SolverPosition]:
+        if vertex.count_any != 1:
+            return set()
+
+        if vertex.line_up == model.LineState.ANY:
+            self.puzzle_state.set_vline(vertex.x, vertex.y - 1, model.LineState.EMPTY)
+            return positions.tiles_for_vline(vertex.x, vertex.y - 1)
+        elif vertex.line_down == model.LineState.ANY:
+            self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.EMPTY)
+            return positions.tiles_for_vline(vertex.x, vertex.y)
+        elif vertex.line_left == model.LineState.ANY:
+            self.puzzle_state.set_hline(vertex.x - 1, vertex.y, model.LineState.EMPTY)
+            return positions.tiles_for_hline(vertex.x - 1, vertex.y)
+        elif vertex.line_right == model.LineState.ANY:
+            self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.EMPTY)
+            return positions.tiles_for_hline(vertex.x, vertex.y)
+
+        return set()
+
+
 class OnlyLineOptionVS(VertexSolver):
 
     def make_updates(self, vertex: Vertex) -> set[positions.SolverPosition]:
