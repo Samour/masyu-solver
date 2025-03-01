@@ -233,28 +233,48 @@ class CornerTileVS(VertexSolver):
             return False
 
         down_vertex = vertex.adjacent_vertex_down
-        return down_vertex is not None and down_vertex.may_place_line_down
+        return (
+            down_vertex is not None
+            and down_vertex.may_place_line_down
+            and down_vertex.line_left != model.LineState.LINE
+            and down_vertex.line_right != model.LineState.LINE
+        )
 
     def _may_place_line_up(self, vertex: positions.Vertex) -> bool:
         if not vertex.may_place_line_up:
             return False
 
         up_vertex = vertex.adjacent_vertex_up
-        return up_vertex is not None and up_vertex.may_place_line_up
+        return (
+            up_vertex is not None
+            and up_vertex.may_place_line_up
+            and up_vertex.line_left != model.LineState.LINE
+            and up_vertex.line_right != model.LineState.LINE
+        )
 
     def _may_place_line_left(self, vertex: positions.Vertex) -> bool:
         if not vertex.may_place_line_left:
             return False
 
         left_vertex = vertex.adjacent_vertex_left
-        return left_vertex is not None and left_vertex.may_place_line_left
+        return (
+            left_vertex is not None
+            and left_vertex.may_place_line_left
+            and left_vertex.line_up != model.LineState.LINE
+            and left_vertex.line_down != model.LineState.LINE
+        )
 
     def _may_place_line_right(self, vertex: positions.Vertex) -> bool:
         if not vertex.may_place_line_right:
             return False
 
         right_vertex = vertex.adjacent_vertex_right
-        return right_vertex is not None and right_vertex.may_place_line_right
+        return (
+            right_vertex is not None
+            and right_vertex.may_place_line_right
+            and right_vertex.line_up != model.LineState.LINE
+            and right_vertex.line_down != model.LineState.LINE
+        )
 
     def _place_line_up(self, vertex: positions.Vertex) -> set[positions.SolverPosition]:
         updates: set[positions.SolverPosition] = set()
