@@ -21,6 +21,7 @@ class _PublishingPuzzle(model.PuzzleState):
     def __init__(self, width: int, height: int, publisher: messaging.Publisher) -> None:
         super().__init__(width, height)
         self.publishing: bool = False
+        self.delay: bool = False
         self._publisher = publisher
 
     def set_hline(self, x: int, y: int, state: model.LineState) -> None:
@@ -37,8 +38,13 @@ class _PublishingPuzzle(model.PuzzleState):
             self._publisher.send(messaging.UpdateVLine(x=x, y=y, state=state))
             self._delay()
 
+    def apply(self, state: model.PuzzleState) -> None:
+        self.delay = False
+        super().apply(state)
+        self.delay = True
+
     def _delay(self) -> None:
-        if _DELAY > 0:
+        if self.delay and _DELAY > 0:
             time.sleep(_DELAY)
 
 
@@ -51,6 +57,7 @@ class _SolverThread(threading.Thread):
 
     def run(self) -> None:
         self._puzzle.publishing = True
+        self._puzzle.delay = True
         solver = algorithm.Solver(puzzle_state=self._puzzle)
         solver.solve()
 

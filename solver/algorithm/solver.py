@@ -10,6 +10,9 @@ class Solver:
         self._validator = validator.SolutionValidator(puzzle_state=puzzle_state)
         self._affected = positions.AffectedPositions(puzzle_state=puzzle_state)
         self._positions: set[positions.SolverPosition] = set()
+        self._backtrack_states: list[
+            typing.Tuple[model.PuzzleState, positions.GuessCandidate]
+        ] = []
         self._vertex_solvers: list[vertex.VertexSolver] = [
             vertex.FillEmptyEdgesVS(puzzle_state=puzzle_state),
             vertex.OnlyLineOptionVS(puzzle_state=puzzle_state),
@@ -24,20 +27,22 @@ class Solver:
 
         while True:
             while len(self._positions):
-                self._serve()
+                if not self._serve():
+                    self._backtrack()
 
             solution_state = self._validator.is_solved()
             if solution_state == validator.SolutionValue.SOLVED:
                 return
             elif solution_state == validator.SolutionValue.INVALID:
-                assert False  # TODO backtrack here
+                self._backtrack()
+                continue
 
             guesses = self._guess_candidates()
             if len(guesses) == 0:
-                assert False  # Would need to backtrack in this case
-
-            guess = guesses.pop(0)
-            self._apply_guess(guess)
+                self._backtrack()
+            else:
+                guess = guesses.pop(0)
+                self._apply_guess(guess)
 
     def _load(self) -> None:
         self._positions = set()
@@ -58,13 +63,15 @@ class Solver:
                     self._positions.add((x, y))
                     self._positions.add((x, y + 1))
 
-    def _serve(self) -> None:
+    def _serve(self) -> bool:
         (x, y) = self._positions.pop()
         tile = self._state.get_tile(x, y)
         assert tile is not None
         v = positions.Vertex(puzzle_state=self._state, x=x, y=y)
+        if not self._validator.validate_vertex(x, y):
+            return False
         if v.is_filled and v.type == model.TileType.ANY:
-            return
+            return True
 
         for solver in self._vertex_solvers:
             updates = solver.make_updates(v)
@@ -72,6 +79,8 @@ class Solver:
                 self._positions.update(updates)
                 self._positions.add((x, y))
                 break
+
+        return True
 
     def _guess_candidates(self) -> list[positions.GuessCandidate]:
         candidates: dict[positions.GuessCandidate, int] = {}
@@ -150,7 +159,10 @@ class Solver:
         return candidates
 
     def _apply_guess(self, guess: positions.GuessCandidate) -> None:
-        print(f"Making guess {guess}")
+        snapshot = model.PuzzleState(1, 1)
+        snapshot.apply(self._state)
+        self._backtrack_states.append((snapshot, guess))
+
         if guess.direction == positions.LineDirection.HORIZONTAL:
             self._state.set_hline(guess.x, guess.y, model.LineState.LINE)
             self._positions.update(self._affected.tiles_for_hline(guess.x, guess.y))
@@ -159,3 +171,15 @@ class Solver:
             self._positions.update(self._affected.tiles_for_vline(guess.x, guess.y))
         else:
             assert False  # Avoid a potential infinite loop
+
+    def _backtrack(self) -> None:
+        snapshot, guess = self._backtrack_states.pop()
+        self._state.apply(snapshot)
+        self._positions = set()
+
+        if guess.direction == positions.LineDirection.HORIZONTAL:
+            self._state.set_hline(guess.x, guess.y, model.LineState.EMPTY)
+            self._positions.update(self._affected.tiles_for_hline(guess.x, guess.y))
+        elif guess.direction == positions.LineDirection.VERTICAL:
+            self._state.set_vline(guess.x, guess.y, model.LineState.EMPTY)
+            self._positions.update(self._affected.tiles_for_vline(guess.x, guess.y))

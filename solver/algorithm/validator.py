@@ -88,7 +88,7 @@ class SolutionValidator:
 
         _, c_x, c_y = self._current_position
         (v_x, v_y), (n_d, n_x, n_y) = next_pos
-        if not self._validate_vertex(v_x, v_y):
+        if not self.validate_vertex(v_x, v_y):
             return SolutionValue.INVALID
 
         self._vertices.discard((v_x, v_y))
@@ -146,8 +146,7 @@ class SolutionValidator:
 
         return lines
 
-    def _validate_vertex(self, x: int, y: int) -> bool:
-        assert self._current_position is not None
+    def validate_vertex(self, x: int, y: int) -> bool:
         vertex = positions.Vertex(puzzle_state=self._state, x=x, y=y)
         if vertex.is_filled and vertex.count_lines not in (0, 2):
             return False
