@@ -46,7 +46,7 @@ class Solver:
         tile = self._state.get_tile(x, y)
         assert tile is not None
         v = vertex.Vertex(puzzle_state=self._state, x=x, y=y)
-        if v.is_filled:
+        if v.is_filled and v.type == model.TileType.ANY:
             return
 
         for solver in self._vertex_solvers:

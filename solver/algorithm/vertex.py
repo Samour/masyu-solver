@@ -151,6 +151,9 @@ class VertexSolver(abc.ABC):
 
     def __init__(self, puzzle_state: model.PuzzleState):
         self.puzzle_state = puzzle_state
+        self.affected: positions.AffectedPositions = positions.AffectedPositions(
+            puzzle_state=puzzle_state
+        )
 
     @abc.abstractmethod
     def make_updates(self, vertex: Vertex) -> set[positions.SolverPosition]:
@@ -166,16 +169,16 @@ class FillEmptyEdgesVS(VertexSolver):
         updates: set[positions.SolverPosition] = set()
         if vertex.line_up == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y - 1, model.LineState.EMPTY)
-            updates.update(positions.tiles_for_vline(vertex.x, vertex.y - 1))
+            updates.update(self.affected.tiles_for_vline(vertex.x, vertex.y - 1))
         if vertex.line_down == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.EMPTY)
-            updates.update(positions.tiles_for_vline(vertex.x, vertex.y))
+            updates.update(self.affected.tiles_for_vline(vertex.x, vertex.y))
         if vertex.line_left == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x - 1, vertex.y, model.LineState.EMPTY)
-            updates.update(positions.tiles_for_hline(vertex.x - 1, vertex.y))
+            updates.update(self.affected.tiles_for_hline(vertex.x - 1, vertex.y))
         if vertex.line_right == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.EMPTY)
-            updates.update(positions.tiles_for_hline(vertex.x, vertex.y))
+            updates.update(self.affected.tiles_for_hline(vertex.x, vertex.y))
 
         return updates
 
@@ -188,16 +191,16 @@ class DeadEndVS(VertexSolver):
 
         if vertex.line_up == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y - 1, model.LineState.EMPTY)
-            return positions.tiles_for_vline(vertex.x, vertex.y - 1)
+            return self.affected.tiles_for_vline(vertex.x, vertex.y - 1)
         elif vertex.line_down == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.EMPTY)
-            return positions.tiles_for_vline(vertex.x, vertex.y)
+            return self.affected.tiles_for_vline(vertex.x, vertex.y)
         elif vertex.line_left == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x - 1, vertex.y, model.LineState.EMPTY)
-            return positions.tiles_for_hline(vertex.x - 1, vertex.y)
+            return self.affected.tiles_for_hline(vertex.x - 1, vertex.y)
         elif vertex.line_right == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.EMPTY)
-            return positions.tiles_for_hline(vertex.x, vertex.y)
+            return self.affected.tiles_for_hline(vertex.x, vertex.y)
 
         return set()
 
@@ -210,16 +213,16 @@ class OnlyLineOptionVS(VertexSolver):
 
         if vertex.line_up == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y - 1, model.LineState.LINE)
-            return positions.tiles_for_vline(vertex.x, vertex.y - 1)
+            return self.affected.tiles_for_vline(vertex.x, vertex.y - 1)
         elif vertex.line_down == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.LINE)
-            return positions.tiles_for_vline(vertex.x, vertex.y)
+            return self.affected.tiles_for_vline(vertex.x, vertex.y)
         elif vertex.line_left == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x - 1, vertex.y, model.LineState.LINE)
-            return positions.tiles_for_hline(vertex.x - 1, vertex.y)
+            return self.affected.tiles_for_hline(vertex.x - 1, vertex.y)
         elif vertex.line_right == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.LINE)
-            return positions.tiles_for_hline(vertex.x, vertex.y)
+            return self.affected.tiles_for_hline(vertex.x, vertex.y)
 
         return set()
 
@@ -251,10 +254,10 @@ class StraightLineTileVS(VertexSolver):
         updates: set[positions.SolverPosition] = set()
         if vertex.line_left == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x - 1, vertex.y, model.LineState.LINE)
-            updates.update(positions.tiles_for_hline(vertex.x - 1, vertex.y))
+            updates.update(self.affected.tiles_for_hline(vertex.x - 1, vertex.y))
         if vertex.line_right == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.LINE)
-            updates.update(positions.tiles_for_hline(vertex.x, vertex.y))
+            updates.update(self.affected.tiles_for_hline(vertex.x, vertex.y))
 
         return updates
 
@@ -262,10 +265,10 @@ class StraightLineTileVS(VertexSolver):
         updates: set[positions.SolverPosition] = set()
         if vertex.line_up == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y - 1, model.LineState.LINE)
-            updates.update(positions.tiles_for_vline(vertex.x, vertex.y - 1))
+            updates.update(self.affected.tiles_for_vline(vertex.x, vertex.y - 1))
         if vertex.line_down == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.LINE)
-            updates.update(positions.tiles_for_vline(vertex.x, vertex.y))
+            updates.update(self.affected.tiles_for_vline(vertex.x, vertex.y))
 
         return updates
 
@@ -283,20 +286,20 @@ class CornerNextToStraightTileVS(VertexSolver):
 
             if adjacent.y < vertex.y and vertex.line_down == model.LineState.ANY:
                 self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.EMPTY)
-                return positions.tiles_for_vline(vertex.x, vertex.y)
+                return self.affected.tiles_for_vline(vertex.x, vertex.y)
             elif adjacent.x > vertex.x and vertex.line_left == model.LineState.ANY:
                 self.puzzle_state.set_hline(
                     vertex.x - 1, vertex.y, model.LineState.EMPTY
                 )
-                return positions.tiles_for_hline(vertex.x - 1, vertex.y)
+                return self.affected.tiles_for_hline(vertex.x - 1, vertex.y)
             elif adjacent.y > vertex.y and vertex.line_up == model.LineState.ANY:
                 self.puzzle_state.set_vline(
                     vertex.x, vertex.y - 1, model.LineState.EMPTY
                 )
-                return positions.tiles_for_vline(vertex.x, vertex.y - 1)
+                return self.affected.tiles_for_vline(vertex.x, vertex.y - 1)
             elif adjacent.x < vertex.x and vertex.line_right == model.LineState.ANY:
                 self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.EMPTY)
-                return positions.tiles_for_hline(vertex.x, vertex.y)
+                return self.affected.tiles_for_hline(vertex.x, vertex.y)
 
         return set()
 
@@ -328,7 +331,7 @@ class CornerNextToStraightTileVS(VertexSolver):
 class CornerTileVS(VertexSolver):
 
     def make_updates(self, vertex: Vertex) -> set[positions.SolverPosition]:
-        if vertex.type != model.TileType.CORNER or vertex.count_lines == 2:
+        if vertex.type != model.TileType.CORNER:
             return set()
 
         updates: set[positions.SolverPosition] = set()
@@ -396,14 +399,14 @@ class CornerTileVS(VertexSolver):
         updates: set[positions.SolverPosition] = set()
         if vertex.line_up == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y - 1, model.LineState.LINE)
-            updates.update(positions.tiles_for_vline(vertex.x, vertex.y - 1))
+            updates.update(self.affected.tiles_for_vline(vertex.x, vertex.y - 1))
 
         up_vertex = vertex.adjacent_vertex_up
         if up_vertex is not None and up_vertex.line_up == model.LineState.ANY:
             self.puzzle_state.set_vline(
                 up_vertex.x, up_vertex.y - 1, model.LineState.LINE
             )
-            updates.update(positions.tiles_for_vline(up_vertex.x, up_vertex.y - 1))
+            updates.update(self.affected.tiles_for_vline(up_vertex.x, up_vertex.y - 1))
 
         return updates
 
@@ -411,14 +414,14 @@ class CornerTileVS(VertexSolver):
         updates: set[positions.SolverPosition] = set()
         if vertex.line_down == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.LINE)
-            updates.update(positions.tiles_for_vline(vertex.x, vertex.y))
+            updates.update(self.affected.tiles_for_vline(vertex.x, vertex.y))
 
         down_vertex = vertex.adjacent_vertex_down
         if down_vertex is not None and down_vertex.line_down == model.LineState.ANY:
             self.puzzle_state.set_vline(
                 down_vertex.x, down_vertex.y, model.LineState.LINE
             )
-            updates.update(positions.tiles_for_vline(down_vertex.x, down_vertex.y))
+            updates.update(self.affected.tiles_for_vline(down_vertex.x, down_vertex.y))
 
         return updates
 
@@ -426,14 +429,16 @@ class CornerTileVS(VertexSolver):
         updates: set[positions.SolverPosition] = set()
         if vertex.line_left == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x - 1, vertex.y, model.LineState.LINE)
-            updates.update(positions.tiles_for_hline(vertex.x - 1, vertex.y))
+            updates.update(self.affected.tiles_for_hline(vertex.x - 1, vertex.y))
 
         left_vertex = vertex.adjacent_vertex_left
         if left_vertex is not None and left_vertex.line_left == model.LineState.ANY:
             self.puzzle_state.set_hline(
                 left_vertex.x - 1, left_vertex.y, model.LineState.LINE
             )
-            updates.update(positions.tiles_for_hline(left_vertex.x - 1, left_vertex.y))
+            updates.update(
+                self.affected.tiles_for_hline(left_vertex.x - 1, left_vertex.y)
+            )
 
         return updates
 
@@ -441,14 +446,16 @@ class CornerTileVS(VertexSolver):
         updates: set[positions.SolverPosition] = set()
         if vertex.line_right == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.LINE)
-            updates.update(positions.tiles_for_hline(vertex.x, vertex.y))
+            updates.update(self.affected.tiles_for_hline(vertex.x, vertex.y))
 
         right_vertex = vertex.adjacent_vertex_right
         if right_vertex is not None and right_vertex.line_right == model.LineState.ANY:
             self.puzzle_state.set_hline(
                 right_vertex.x, right_vertex.y, model.LineState.LINE
             )
-            updates.update(positions.tiles_for_hline(right_vertex.x, right_vertex.y))
+            updates.update(
+                self.affected.tiles_for_hline(right_vertex.x, right_vertex.y)
+            )
 
         return updates
 
@@ -457,25 +464,25 @@ class CornerTileVS(VertexSolver):
             return set()
 
         self.puzzle_state.set_vline(vertex.x, vertex.y - 1, model.LineState.EMPTY)
-        return positions.tiles_for_vline(vertex.x, vertex.y - 1)
+        return self.affected.tiles_for_vline(vertex.x, vertex.y - 1)
 
     def _block_line_down(self, vertex: Vertex) -> set[positions.SolverPosition]:
         if vertex.line_down != model.LineState.ANY:
             return set()
 
         self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.EMPTY)
-        return positions.tiles_for_vline(vertex.x, vertex.y)
+        return self.affected.tiles_for_vline(vertex.x, vertex.y)
 
     def _block_line_left(self, vertex: Vertex) -> set[positions.SolverPosition]:
         if vertex.line_left != model.LineState.ANY:
             return set()
 
         self.puzzle_state.set_hline(vertex.x - 1, vertex.y, model.LineState.EMPTY)
-        return positions.tiles_for_hline(vertex.x - 1, vertex.y)
+        return self.affected.tiles_for_hline(vertex.x - 1, vertex.y)
 
     def _block_line_right(self, vertex: Vertex) -> set[positions.SolverPosition]:
         if vertex.line_right != model.LineState.ANY:
             return set()
 
         self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.EMPTY)
-        return positions.tiles_for_hline(vertex.x, vertex.y)
+        return self.affected.tiles_for_hline(vertex.x, vertex.y)
