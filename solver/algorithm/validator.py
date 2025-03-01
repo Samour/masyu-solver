@@ -1,6 +1,7 @@
 import enum
 import typing
 from solver import model
+from . import positions
 
 
 class SolutionValue(enum.Enum):
@@ -147,43 +148,89 @@ class SolutionValidator:
 
     def _validate_vertex(self, x: int, y: int) -> bool:
         assert self._current_position is not None
-        tile_type = self._state.get_tile(x, y)
+        vertex = positions.Vertex(puzzle_state=self._state, x=x, y=y)
+        if vertex.is_filled and vertex.count_lines not in (0, 2):
+            return False
+        if vertex.count_lines > 2:
+            return False
 
-        if tile_type == model.TileType.ANY:
+        if vertex.type == model.TileType.ANY:
             return True
+        elif vertex.type == model.TileType.CORNER:
+            return self._validate_corner_vertex(vertex)
+        elif vertex.type == model.TileType.STRAIGHT:
+            return self._validate_straight_vertex(vertex)
 
-        adjacent_v = self._enumerate_vertices(x, y)
-        if len(adjacent_v) != 2:
-            return False
-        (a0_x, a0_y), (a1_x, a1_y) = adjacent_v
-        a0_c = self._is_corner(a0_x, a0_y)
-        a1_c = self._is_corner(a1_x, a1_y)
-        if a0_c is None or a1_c is None:
-            return False
-        has_adjacent_corner = a0_c or a1_c
-
-        if tile_type == model.TileType.STRAIGHT:
-            return self._is_corner(x, y) is False and has_adjacent_corner
-        elif tile_type == model.TileType.CORNER:
-            return self._is_corner(x, y) is True and not has_adjacent_corner
         assert False
 
-    def _enumerate_vertices(self, x: int, y: int) -> set[typing.Tuple[int, int]]:
-        vertices: set[typing.Tuple[int, int]] = set()
-        for d, v_x, v_y in self._enumerate_lines(x, y):
-            vertices.add((v_x, v_y))
-            if d == _LineDirection.HORIZONTAL:
-                vertices.add((v_x + 1, v_y))
-            elif d == _LineDirection.VERTICAL:
-                vertices.add((v_x, v_y + 1))
+    def _validate_corner_vertex(self, vertex: positions.Vertex) -> bool:
+        if not vertex.may_be_corner:
+            return False
+        if vertex.line_up == model.LineState.LINE:
+            up_vertex = vertex.adjacent_vertex_up
+            if (
+                up_vertex is None
+                or not up_vertex.may_be_straight
+                or not up_vertex.may_place_line_up
+            ):
+                return False
+        if vertex.line_right == model.LineState.LINE:
+            right_vertex = vertex.adjacent_vertex_right
+            if (
+                right_vertex is None
+                or not right_vertex.may_be_straight
+                or not right_vertex.may_place_line_right
+            ):
+                return False
+        if vertex.line_down == model.LineState.LINE:
+            down_vertex = vertex.adjacent_vertex_down
+            if (
+                down_vertex is None
+                or not down_vertex.may_be_straight
+                or not down_vertex.may_place_line_down
+            ):
+                return False
+        if vertex.line_left == model.LineState.LINE:
+            left_vertex = vertex.adjacent_vertex_left
+            if (
+                left_vertex is None
+                or not left_vertex.may_be_straight
+                or not left_vertex.may_place_line_left
+            ):
+                return False
 
-        vertices.remove((x, y))
-        return vertices
+        return True
 
-    def _is_corner(self, x: int, y: int) -> typing.Optional[bool]:
-        lines = self._enumerate_lines(x, y)
-        if len(lines) != 2:
-            return None
+    def _validate_straight_vertex(self, vertex: positions.Vertex) -> bool:
+        if not vertex.may_be_straight:
+            return False
+        if (
+            vertex.line_up == model.LineState.LINE
+            or vertex.line_down == model.LineState.LINE
+        ):
+            up_vertex = vertex.adjacent_vertex_up
+            down_vertex = vertex.adjacent_vertex_down
+            if up_vertex is None or down_vertex is None:
+                return False
+            if not up_vertex.may_be_corner and not down_vertex.may_be_corner:
+                return False
+            if up_vertex.is_straight and not down_vertex.may_be_corner:
+                return False
+            if down_vertex.is_straight and not up_vertex.may_be_corner:
+                return False
+        if (
+            vertex.line_left == model.LineState.LINE
+            or vertex.line_right == model.LineState.LINE
+        ):
+            left_vertex = vertex.adjacent_vertex_left
+            right_vertex = vertex.adjacent_vertex_right
+            if left_vertex is None or right_vertex is None:
+                return False
+            if not left_vertex.may_be_corner and not right_vertex.may_be_corner:
+                return False
+            if left_vertex.is_straight and not right_vertex.may_be_corner:
+                return False
+            if right_vertex.is_straight and not left_vertex.may_be_corner:
+                return False
 
-        (d_a, _, _), (d_b, _, _) = lines
-        return d_a != d_b
+        return True

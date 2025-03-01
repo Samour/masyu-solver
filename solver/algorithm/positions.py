@@ -106,6 +106,8 @@ class Vertex:
 
     @property
     def may_be_corner(self) -> bool:
+        if self.is_straight:
+            return False
         may_horizontal = self.may_place_line_left or self.may_place_line_right
         may_vertical = self.may_place_line_up or self.may_place_line_down
         return may_horizontal and may_vertical
@@ -121,6 +123,8 @@ class Vertex:
 
     @property
     def may_be_straight(self) -> bool:
+        if self.is_corner:
+            return False
         may_horizontal = self.may_place_line_left and self.may_place_line_right
         may_vertical = self.may_place_line_up and self.may_place_line_down
         return may_horizontal or may_vertical
