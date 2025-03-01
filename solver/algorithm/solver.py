@@ -13,6 +13,17 @@ class _ItemType(enum.Enum):
 _SolverPosition = typing.Tuple[_ItemType, int, int]
 
 
+class _SolverPositions:
+
+    @staticmethod
+    def tiles_for_hline(x: int, y: int) -> set[_SolverPosition]:
+        return {(_ItemType.TILE, x, y), (_ItemType.TILE, x + 1, y)}
+
+    @staticmethod
+    def tiles_for_vline(x: int, y: int) -> set[_SolverPosition]:
+        return {(_ItemType.TILE, x, y), (_ItemType.TILE, x, y + 1)}
+
+
 class Solver:
 
     def __init__(self, puzzle_state: model.PuzzleState):
@@ -158,16 +169,16 @@ class _FillEmptyEdgesVS(_VertexSolver):
         updates: set[_SolverPosition] = set()
         if vertex.line_up == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y - 1, model.LineState.EMPTY)
-            updates.add((_ItemType.VLINE, vertex.x, vertex.y - 1))
+            updates.update(_SolverPositions.tiles_for_vline(vertex.x, vertex.y - 1))
         if vertex.line_down == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.EMPTY)
-            updates.add((_ItemType.VLINE, vertex.x, vertex.y))
+            updates.update(_SolverPositions.tiles_for_vline(vertex.x, vertex.y))
         if vertex.line_left == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x - 1, vertex.y, model.LineState.EMPTY)
-            updates.add((_ItemType.HLINE, vertex.x - 1, vertex.y))
+            updates.update(_SolverPositions.tiles_for_hline(vertex.x - 1, vertex.y))
         if vertex.line_right == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.EMPTY)
-            updates.add((_ItemType.HLINE, vertex.x, vertex.y))
+            updates.update(_SolverPositions.tiles_for_hline(vertex.x, vertex.y))
 
         return updates
 
@@ -178,18 +189,17 @@ class _OnlyLineOptionVS(_VertexSolver):
         if vertex.count_lines != 1 or vertex.count_any != 1:
             return set()
 
-        updates: set[_SolverPosition] = set()
         if vertex.line_up == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y - 1, model.LineState.LINE)
-            updates.add((_ItemType.VLINE, vertex.x, vertex.y - 1))
-        if vertex.line_down == model.LineState.ANY:
+            return _SolverPositions.tiles_for_vline(vertex.x, vertex.y - 1)
+        elif vertex.line_down == model.LineState.ANY:
             self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.LINE)
-            updates.add((_ItemType.VLINE, vertex.x, vertex.y))
-        if vertex.line_left == model.LineState.ANY:
+            return _SolverPositions.tiles_for_vline(vertex.x, vertex.y)
+        elif vertex.line_left == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x - 1, vertex.y, model.LineState.LINE)
-            updates.add((_ItemType.HLINE, vertex.x - 1, vertex.y))
-        if vertex.line_right == model.LineState.ANY:
+            return _SolverPositions.tiles_for_hline(vertex.x - 1, vertex.y)
+        elif vertex.line_right == model.LineState.ANY:
             self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.LINE)
-            updates.add((_ItemType.HLINE, vertex.x, vertex.y))
+            return _SolverPositions.tiles_for_hline(vertex.x, vertex.y)
 
-        return updates
+        return set()
