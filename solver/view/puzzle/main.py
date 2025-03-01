@@ -81,6 +81,9 @@ class PuzzleView(tk.Frame):
         self._state.register_rerender_vline(self._handle_rerender_vline)
 
     def _handle_leftclick(self, e: tk.Event) -> None:  # type: ignore[type-arg]
+        if self._state.controls_disabled:
+            return
+
         if self._state.view_mode == state.ViewMode.EDITING:
             self._handle_edit_leftclick(e.x, e.y)
         elif self._state.view_mode == state.ViewMode.SOLVING:
@@ -108,6 +111,9 @@ class PuzzleView(tk.Frame):
             self._update_vline(x, y, True)
 
     def _handle_rightclick(self, e: tk.Event) -> None:  # type: ignore[type-arg]
+        if self._state.controls_disabled:
+            return
+
         if self._state.view_mode == state.ViewMode.EDITING:
             self._handle_edit_rightclick(e.x, e.y)
         elif self._state.view_mode == state.ViewMode.SOLVING:

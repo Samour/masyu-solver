@@ -38,6 +38,8 @@ class Application(tk.Frame):
         )
         self._save_load_controls.render()
 
+        self._state.register_rerender_all_hander(self.render)
+
 
 def main(puzzle_state: model.PuzzleState) -> None:
     message_bus = messaging.MessageBus()

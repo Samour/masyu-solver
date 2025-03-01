@@ -54,11 +54,17 @@ class _EditModeButtons(tk.Frame):
             self._change_mode_button.destroy()
 
         self._size_button = tk.Button(
-            self, text="Change size", command=self._on_changesize
+            self,
+            text="Change size",
+            state=("disabled" if self._state.controls_disabled else "normal"),
+            command=self._on_changesize,
         )
         self._size_button.pack(side="left", padx=5)
         self._change_mode_button = tk.Button(
-            self, text="Start solving", command=self._on_change_mode
+            self,
+            text="Start solving",
+            state=("disabled" if self._state.controls_disabled else "normal"),
+            command=self._on_change_mode,
         )
         self._change_mode_button.pack(padx=5)
         self.pack(pady=5)
@@ -97,7 +103,10 @@ class _SolveModeButtons(tk.Frame):
             self._change_mode_button.destroy()
 
         self._change_mode_button = tk.Button(
-            self, text="Edit board", command=self._on_change_mode
+            self,
+            text="Edit board",
+            state=("disabled" if self._state.controls_disabled else "normal"),
+            command=self._on_change_mode,
         )
         self._change_mode_button.pack()
         self.pack(pady=5)
@@ -122,10 +131,18 @@ class SolvingControls(tk.Frame):
             self._solve_button.destroy()
 
         self._check_button = tk.Button(
-            self, text="Check solution", command=self._check_solution
+            self,
+            text="Check solution",
+            state=("disabled" if self._state.controls_disabled else "normal"),
+            command=self._check_solution,
         )
         self._check_button.pack(side="left", padx=5)
-        self._solve_button = tk.Button(self, text="Auto solve")
+        self._solve_button = tk.Button(
+            self,
+            text="Auto solve",
+            state=("disabled" if self._state.controls_disabled else "normal"),
+            command=self._on_auto_solve,
+        )
         self._solve_button.pack(padx=5)
         self.pack()
 
@@ -134,6 +151,10 @@ class SolvingControls(tk.Frame):
             messagebox.showinfo(message="Solution is correct!")
         else:
             messagebox.showinfo(message="Puzzle is not solved")
+
+    def _on_auto_solve(self) -> None:
+        self._state.controls_disabled = True
+        self._state.rerenger_all()
 
 
 class SaveLoadControls(tk.Frame):
@@ -155,11 +176,17 @@ class SaveLoadControls(tk.Frame):
             self._save_button.destroy()
 
         self._load_button = tk.Button(
-            self, text="Load puzzle", command=self._on_load_click
+            self,
+            text="Load puzzle",
+            state=("disabled" if self._state.controls_disabled else "normal"),
+            command=self._on_load_click,
         )
         self._load_button.pack(side="left", padx=5)
         self._save_button = tk.Button(
-            self, text="Save puzzle", command=self._on_save_click
+            self,
+            text="Save puzzle",
+            state=("disabled" if self._state.controls_disabled else "normal"),
+            command=self._on_save_click,
         )
         self._save_button.pack(padx=5)
         self.pack(pady=5)
