@@ -39,11 +39,15 @@ class Solver:
             for x in range(self._state.width - 1):
                 if self._state.get_hline(x, y) != model.LineState.ANY:
                     self._positions.add((_ItemType.HLINE, x, y))
+                    self._positions.add((_ItemType.TILE, x, y))
+                    self._positions.add((_ItemType.TILE, x + 1, y))
         
         for y in range(self._state.height - 1):
             for x in range(self._state.width):
                 if self._state.get_vline(x, y) != model.LineState.ANY:
                     self._positions.add((_ItemType.VLINE, x, y))
+                    self._positions.add((_ItemType.TILE, x, y))
+                    self._positions.add((_ItemType.TILE, x, y + 1))
     
     def _serve(self) -> None:
         (itype, x, y) = self._positions.pop()
