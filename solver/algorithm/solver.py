@@ -11,7 +11,8 @@ class Solver:
             vertex.FillEmptyEdgesVS(puzzle_state=puzzle_state),
             vertex.OnlyLineOptionVS(puzzle_state=puzzle_state),
             vertex.DeadEndVS(puzzle_state=puzzle_state),
-            vertex.StraightLineVS(puzzle_state=puzzle_state),
+            vertex.StraightLineTileVS(puzzle_state=puzzle_state),
+            vertex.CornerNextToStraightTileVS(puzzle_state=puzzle_state),
         ]
 
     def solve(self) -> None:
@@ -51,4 +52,5 @@ class Solver:
             updates = solver.make_updates(v)
             if len(updates) > 0:
                 self._positions.update(updates)
+                self._positions.add((x, y))
                 break
