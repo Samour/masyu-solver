@@ -13,6 +13,7 @@ class Solver:
             vertex.DeadEndVS(puzzle_state=puzzle_state),
             vertex.StraightLineTileVS(puzzle_state=puzzle_state),
             vertex.CornerNextToStraightTileVS(puzzle_state=puzzle_state),
+            vertex.CornerTileVS(puzzle_state=puzzle_state),
         ]
 
     def solve(self) -> None:

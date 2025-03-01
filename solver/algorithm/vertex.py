@@ -104,26 +104,47 @@ class Vertex:
         return may_horizontal or may_vertical
 
     @property
-    def adjacent_vertices(self) -> list["Vertex"]:
-        adjacent: list[Vertex] = []
-        if self._puzzle_state.get_tile(self.x, self.y - 1) is not None:
-            adjacent.append(
-                Vertex(puzzle_state=self._puzzle_state, x=self.x, y=self.y - 1)
-            )
-        if self._puzzle_state.get_tile(self.x + 1, self.y) is not None:
-            adjacent.append(
-                Vertex(puzzle_state=self._puzzle_state, x=self.x + 1, y=self.y)
-            )
-        if self._puzzle_state.get_tile(self.x, self.y + 1) is not None:
-            adjacent.append(
-                Vertex(puzzle_state=self._puzzle_state, x=self.x, y=self.y + 1)
-            )
-        if self._puzzle_state.get_tile(self.x - 1, self.y) is not None:
-            adjacent.append(
-                Vertex(puzzle_state=self._puzzle_state, x=self.x - 1, y=self.y)
-            )
+    def adjacent_vertex_up(self) -> typing.Optional["Vertex"]:
+        return (
+            Vertex(puzzle_state=self._puzzle_state, x=self.x, y=self.y - 1)
+            if self._puzzle_state.get_tile(self.x, self.y - 1) is not None
+            else None
+        )
 
-        return adjacent
+    @property
+    def adjacent_vertex_down(self) -> typing.Optional["Vertex"]:
+        return (
+            Vertex(puzzle_state=self._puzzle_state, x=self.x, y=self.y + 1)
+            if self._puzzle_state.get_tile(self.x, self.y + 1) is not None
+            else None
+        )
+
+    @property
+    def adjacent_vertex_left(self) -> typing.Optional["Vertex"]:
+        return (
+            Vertex(puzzle_state=self._puzzle_state, x=self.x - 1, y=self.y)
+            if self._puzzle_state.get_tile(self.x - 1, self.y) is not None
+            else None
+        )
+
+    @property
+    def adjacent_vertex_right(self) -> typing.Optional["Vertex"]:
+        return (
+            Vertex(puzzle_state=self._puzzle_state, x=self.x + 1, y=self.y)
+            if self._puzzle_state.get_tile(self.x + 1, self.y) is not None
+            else None
+        )
+
+    @property
+    def adjacent_vertices(self) -> list["Vertex"]:
+        adjacent = [
+            self.adjacent_vertex_up,
+            self.adjacent_vertex_down,
+            self.adjacent_vertex_left,
+            self.adjacent_vertex_right,
+        ]
+
+        return [a for a in adjacent if a is not None]
 
 
 class VertexSolver(abc.ABC):
@@ -302,3 +323,159 @@ class CornerNextToStraightTileVS(VertexSolver):
         candidates.remove((current.x, current.y))
         x, y = candidates.pop()
         return Vertex(puzzle_state=self.puzzle_state, x=x, y=y)
+
+
+class CornerTileVS(VertexSolver):
+
+    def make_updates(self, vertex: Vertex) -> set[positions.SolverPosition]:
+        if vertex.type != model.TileType.CORNER or vertex.count_lines == 2:
+            return set()
+
+        updates: set[positions.SolverPosition] = set()
+        if vertex.line_up == model.LineState.LINE or not self._may_place_line_down(
+            vertex
+        ):
+            updates.update(self._place_line_up(vertex))
+            updates.update(self._block_line_down(vertex))
+        if vertex.line_down == model.LineState.LINE or not self._may_place_line_up(
+            vertex
+        ):
+            updates.update(self._place_line_down(vertex))
+            updates.update(self._block_line_up(vertex))
+        if vertex.line_left == model.LineState.LINE or not self._may_place_line_right(
+            vertex
+        ):
+            updates.update(self._place_line_left(vertex))
+            updates.update(self._block_line_right(vertex))
+        if vertex.line_right == model.LineState.LINE or not self._may_place_line_left(
+            vertex
+        ):
+            updates.update(self._place_line_right(vertex))
+            updates.update(self._block_line_left(vertex))
+
+        if not self._may_place_line_up(vertex):
+            updates.update(self._block_line_up(vertex))
+        if not self._may_place_line_down(vertex):
+            updates.update(self._block_line_down(vertex))
+        if not self._may_place_line_left(vertex):
+            updates.update(self._block_line_left(vertex))
+        if not self._may_place_line_right(vertex):
+            updates.update(self._block_line_right(vertex))
+
+        return updates
+
+    def _may_place_line_down(self, vertex: Vertex) -> bool:
+        if not vertex.may_place_line_down:
+            return False
+
+        down_vertex = vertex.adjacent_vertex_down
+        return down_vertex is not None and down_vertex.may_place_line_down
+
+    def _may_place_line_up(self, vertex: Vertex) -> bool:
+        if not vertex.may_place_line_up:
+            return False
+
+        up_vertex = vertex.adjacent_vertex_up
+        return up_vertex is not None and up_vertex.may_place_line_up
+
+    def _may_place_line_left(self, vertex: Vertex) -> bool:
+        if not vertex.may_place_line_left:
+            return False
+
+        left_vertex = vertex.adjacent_vertex_left
+        return left_vertex is not None and left_vertex.may_place_line_left
+
+    def _may_place_line_right(self, vertex: Vertex) -> bool:
+        if not vertex.may_place_line_right:
+            return False
+
+        right_vertex = vertex.adjacent_vertex_right
+        return right_vertex is not None and right_vertex.may_place_line_right
+
+    def _place_line_up(self, vertex: Vertex) -> set[positions.SolverPosition]:
+        updates: set[positions.SolverPosition] = set()
+        if vertex.line_up == model.LineState.ANY:
+            self.puzzle_state.set_vline(vertex.x, vertex.y - 1, model.LineState.LINE)
+            updates.update(positions.tiles_for_vline(vertex.x, vertex.y - 1))
+
+        up_vertex = vertex.adjacent_vertex_up
+        if up_vertex is not None and up_vertex.line_up == model.LineState.ANY:
+            self.puzzle_state.set_vline(
+                up_vertex.x, up_vertex.y - 1, model.LineState.LINE
+            )
+            updates.update(positions.tiles_for_vline(up_vertex.x, up_vertex.y - 1))
+
+        return updates
+
+    def _place_line_down(self, vertex: Vertex) -> set[positions.SolverPosition]:
+        updates: set[positions.SolverPosition] = set()
+        if vertex.line_down == model.LineState.ANY:
+            self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.LINE)
+            updates.update(positions.tiles_for_vline(vertex.x, vertex.y))
+
+        down_vertex = vertex.adjacent_vertex_down
+        if down_vertex is not None and down_vertex.line_down == model.LineState.ANY:
+            self.puzzle_state.set_vline(
+                down_vertex.x, down_vertex.y, model.LineState.LINE
+            )
+            updates.update(positions.tiles_for_vline(down_vertex.x, down_vertex.y))
+
+        return updates
+
+    def _place_line_left(self, vertex: Vertex) -> set[positions.SolverPosition]:
+        updates: set[positions.SolverPosition] = set()
+        if vertex.line_left == model.LineState.ANY:
+            self.puzzle_state.set_hline(vertex.x - 1, vertex.y, model.LineState.LINE)
+            updates.update(positions.tiles_for_hline(vertex.x - 1, vertex.y))
+
+        left_vertex = vertex.adjacent_vertex_left
+        if left_vertex is not None and left_vertex.line_left == model.LineState.ANY:
+            self.puzzle_state.set_hline(
+                left_vertex.x - 1, left_vertex.y, model.LineState.LINE
+            )
+            updates.update(positions.tiles_for_hline(left_vertex.x - 1, left_vertex.y))
+
+        return updates
+
+    def _place_line_right(self, vertex: Vertex) -> set[positions.SolverPosition]:
+        updates: set[positions.SolverPosition] = set()
+        if vertex.line_right == model.LineState.ANY:
+            self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.LINE)
+            updates.update(positions.tiles_for_hline(vertex.x, vertex.y))
+
+        right_vertex = vertex.adjacent_vertex_right
+        if right_vertex is not None and right_vertex.line_right == model.LineState.ANY:
+            self.puzzle_state.set_hline(
+                right_vertex.x, right_vertex.y, model.LineState.LINE
+            )
+            updates.update(positions.tiles_for_hline(right_vertex.x, right_vertex.y))
+
+        return updates
+
+    def _block_line_up(self, vertex: Vertex) -> set[positions.SolverPosition]:
+        if vertex.line_up != model.LineState.ANY:
+            return set()
+
+        self.puzzle_state.set_vline(vertex.x, vertex.y - 1, model.LineState.EMPTY)
+        return positions.tiles_for_vline(vertex.x, vertex.y - 1)
+
+    def _block_line_down(self, vertex: Vertex) -> set[positions.SolverPosition]:
+        if vertex.line_down != model.LineState.ANY:
+            return set()
+
+        self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.EMPTY)
+        return positions.tiles_for_vline(vertex.x, vertex.y)
+
+    def _block_line_left(self, vertex: Vertex) -> set[positions.SolverPosition]:
+        if vertex.line_left != model.LineState.ANY:
+            return set()
+
+        self.puzzle_state.set_hline(vertex.x - 1, vertex.y, model.LineState.EMPTY)
+        return positions.tiles_for_hline(vertex.x - 1, vertex.y)
+
+    def _block_line_right(self, vertex: Vertex) -> set[positions.SolverPosition]:
+        if vertex.line_right != model.LineState.ANY:
+            return set()
+
+        self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.EMPTY)
+        return positions.tiles_for_hline(vertex.x, vertex.y)
