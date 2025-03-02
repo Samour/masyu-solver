@@ -41,7 +41,7 @@ class SolutionValidator:
                 elif tile_valid == SolutionValue.INVALID:
                     return SolutionValue.INVALID
 
-        line_count = self._discover_lines()
+        line_count = self.discover_lines()
         if self._starting_point is None:
             return SolutionValue.UNSOLVED
         _, x, y = self._starting_point
@@ -76,7 +76,7 @@ class SolutionValidator:
 
         return visited_edges
 
-    def _discover_lines(self) -> int:
+    def discover_lines(self) -> int:
         self._starting_point = None
         line_count = 0
         for y in range(self._state.height):
@@ -117,6 +117,8 @@ class SolutionValidator:
         assert self._current_position is not None
         v_x, v_y = self._next_vertex()
         adjacent_lines = self._enumerate_lines(v_x, v_y)
+        if self._current_position not in adjacent_lines:
+            return None
         adjacent_lines.remove(self._current_position)
 
         if len(adjacent_lines) != 1:

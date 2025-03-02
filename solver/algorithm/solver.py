@@ -69,19 +69,29 @@ class Solver:
         tile = self._state.get_tile(x, y)
         assert tile is not None
         v = positions.Vertex(puzzle_state=self._state, x=x, y=y)
-        if self._validator.validate_vertex(x, y) == validator.SolutionValue.INVALID:
-            return False
         if v.is_filled and v.type == model.TileType.ANY:
             return True
 
         for solver in self._vertex_solvers:
             updates = solver.make_updates(v)
             if len(updates) > 0:
+                for (u_x, u_y) in updates:
+                    if not self._check_node(u_x, u_y):
+                        return False
                 self._positions.update(updates)
                 self._positions.add((x, y))
                 break
 
         return True
+    
+    def _check_node(self, x: int, y: int) -> bool:
+        if self._validator.validate_vertex(x, y) == validator.SolutionValue.INVALID:
+            return False
+        walk_length = self._validator.walk_nodes(x, y)
+        if walk_length is None:
+            return True
+        
+        return self._validator.discover_lines() == walk_length
 
     def _guess_candidates(self) -> list[positions.GuessCandidate]:
         candidates: dict[positions.GuessCandidate, int] = {}
