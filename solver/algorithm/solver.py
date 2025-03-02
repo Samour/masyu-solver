@@ -69,7 +69,7 @@ class Solver:
         tile = self._state.get_tile(x, y)
         assert tile is not None
         v = positions.Vertex(puzzle_state=self._state, x=x, y=y)
-        if not self._validator.validate_vertex(x, y):
+        if self._validator.validate_vertex(x, y) == validator.SolutionValue.INVALID:
             return False
         if v.is_filled and v.type == model.TileType.ANY:
             return True
