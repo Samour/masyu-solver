@@ -189,6 +189,62 @@ class CornerNextToStraightTileVS(VertexSolver):
         return positions.Vertex(puzzle_state=self.puzzle_state, x=x, y=y)
 
 
+class ConsecutiveStraightTilesVS(VertexSolver):
+
+    def make_updates(self, vertex: positions.Vertex) -> set[positions.SolverPosition]:
+        if vertex.type != model.TileType.STRAIGHT:
+            return set()
+
+        updates: set[positions.SolverPosition] = set()
+        for adjacent in vertex.adjacent_vertices:
+            if adjacent.type != model.TileType.STRAIGHT:
+                continue
+
+            compliment = self._get_compliment_vertex(straight=adjacent, current=vertex)
+            if compliment is None or compliment.type != model.TileType.STRAIGHT:
+                continue
+
+            if adjacent.y < vertex.y and vertex.line_down == model.LineState.ANY:
+                self.puzzle_state.set_vline(vertex.x, vertex.y, model.LineState.EMPTY)
+                updates.update(self.affected.tiles_for_vline(vertex.x, vertex.y))
+            elif adjacent.x > vertex.x and vertex.line_left == model.LineState.ANY:
+                self.puzzle_state.set_hline(
+                    vertex.x - 1, vertex.y, model.LineState.EMPTY
+                )
+                updates.update(self.affected.tiles_for_hline(vertex.x - 1, vertex.y))
+            elif adjacent.y > vertex.y and vertex.line_up == model.LineState.ANY:
+                self.puzzle_state.set_vline(
+                    vertex.x, vertex.y - 1, model.LineState.EMPTY
+                )
+                updates.update(self.affected.tiles_for_vline(vertex.x, vertex.y - 1))
+            elif adjacent.x < vertex.x and vertex.line_right == model.LineState.ANY:
+                self.puzzle_state.set_hline(vertex.x, vertex.y, model.LineState.EMPTY)
+                updates.update(self.affected.tiles_for_hline(vertex.x, vertex.y))
+
+        return updates
+
+    def _get_compliment_vertex(
+        self, straight: positions.Vertex, current: positions.Vertex
+    ) -> typing.Optional[positions.Vertex]:
+        candidates: set[typing.Tuple[int, int]]
+        if straight.y == current.y:
+            candidates = {(straight.x - 1, straight.y), (straight.x + 1, straight.y)}
+        elif straight.x == current.x:
+            candidates = {(straight.x, straight.y - 1), (straight.x, straight.y + 1)}
+        else:
+            return None
+
+        if (current.x, current.y) not in candidates:
+            return None
+
+        candidates.remove((current.x, current.y))
+        x, y = candidates.pop()
+        if self.puzzle_state.get_tile(x, y) is None:
+            return None
+
+        return positions.Vertex(puzzle_state=self.puzzle_state, x=x, y=y)
+
+
 class CornerTileVS(VertexSolver):
 
     def make_updates(self, vertex: positions.Vertex) -> set[positions.SolverPosition]:
@@ -235,6 +291,7 @@ class CornerTileVS(VertexSolver):
         down_vertex = vertex.adjacent_vertex_down
         return (
             down_vertex is not None
+            and down_vertex.type != model.TileType.CORNER
             and down_vertex.may_place_line_down
             and down_vertex.line_left != model.LineState.LINE
             and down_vertex.line_right != model.LineState.LINE
@@ -247,6 +304,7 @@ class CornerTileVS(VertexSolver):
         up_vertex = vertex.adjacent_vertex_up
         return (
             up_vertex is not None
+            and up_vertex.type != model.TileType.CORNER
             and up_vertex.may_place_line_up
             and up_vertex.line_left != model.LineState.LINE
             and up_vertex.line_right != model.LineState.LINE
@@ -259,6 +317,7 @@ class CornerTileVS(VertexSolver):
         left_vertex = vertex.adjacent_vertex_left
         return (
             left_vertex is not None
+            and left_vertex.type != model.TileType.CORNER
             and left_vertex.may_place_line_left
             and left_vertex.line_up != model.LineState.LINE
             and left_vertex.line_down != model.LineState.LINE
@@ -271,6 +330,7 @@ class CornerTileVS(VertexSolver):
         right_vertex = vertex.adjacent_vertex_right
         return (
             right_vertex is not None
+            and right_vertex.type != model.TileType.CORNER
             and right_vertex.may_place_line_right
             and right_vertex.line_up != model.LineState.LINE
             and right_vertex.line_down != model.LineState.LINE

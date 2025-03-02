@@ -3,7 +3,7 @@ import threading
 from solver import algorithm, messaging, model
 
 
-_DELAY = 0.5
+_DELAY = 0.1
 
 
 def start_solver(
