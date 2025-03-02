@@ -184,12 +184,18 @@ class AffectedPositions:
     def tiles_for_vline(self, x: int, y: int) -> set[SolverPosition]:
         return self._tile_and_adjacent(x, y).union(self._tile_and_adjacent(x, y + 1))
 
-    def _tile_and_adjacent(self, x: int, y: int, prevent_recurse: bool=False) -> set[SolverPosition]:
+    def _tile_and_adjacent(
+        self, x: int, y: int, prevent_recurse: bool = False
+    ) -> set[SolverPosition]:
         affected: set[SolverPosition] = {(x, y)}
         vertex = Vertex(puzzle_state=self._puzzle_state, x=x, y=y)
         for adjacent in vertex.adjacent_vertices:
             affected.add((adjacent.x, adjacent.y))
             if adjacent.type == model.TileType.STRAIGHT and not prevent_recurse:
-                affected.update(self._tile_and_adjacent(adjacent.x, adjacent.y, prevent_recurse=True))
-        
+                affected.update(
+                    self._tile_and_adjacent(
+                        adjacent.x, adjacent.y, prevent_recurse=True
+                    )
+                )
+
         return affected
